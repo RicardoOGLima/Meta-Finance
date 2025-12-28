@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculateSummary, formatCurrency } from '../utils/calculations';
@@ -7,6 +8,7 @@ import {
 } from 'recharts';
 import { ArrowUpCircle, ArrowDownCircle, Wallet, AlertCircle, PiggyBank } from 'lucide-react';
 import { ExpenseCategory } from '../types';
+import { CategoryBadge } from './Transactions';
 
 const Dashboard: React.FC = () => {
   const { transactions, budgetGoals, theme } = useApp();
@@ -17,7 +19,6 @@ const Dashboard: React.FC = () => {
 
   const summary = calculateSummary(transactions, month, year);
 
-  // Filter transactions for the current month once to derive breakdown
   const currentMonthTransactions = transactions.filter(t => {
     const d = new Date(t.date);
     return d.getMonth() === month && d.getFullYear() === year;
@@ -31,7 +32,6 @@ const Dashboard: React.FC = () => {
     .filter(t => t.type === 'DESPESA' && t.category !== ExpenseCategory.LIBERDADE_FINANCEIRA)
     .reduce((acc, t) => acc + t.value, 0);
 
-  // Budget comparison (Only for Expense Categories)
   const budgetComparison = budgetGoals.map(goal => {
     const real = currentMonthTransactions
       .filter(t => t.type === 'DESPESA' && t.category === goal.category)
@@ -50,8 +50,6 @@ const Dashboard: React.FC = () => {
     };
   });
 
-  // Chart data: Distribution by subcategory (Bar Chart instead of Pie Chart)
-  // Added explicit Record<string, number> typing and initial value casting to fix potential arithmetic errors on line 65.
   const subcategoryMap = currentMonthTransactions
     .filter(t => t.type === 'DESPESA')
     .reduce((acc: Record<string, number>, t) => {
@@ -62,16 +60,13 @@ const Dashboard: React.FC = () => {
 
   const subcategoryData = Object.entries(subcategoryMap)
     .map(([name, value]) => ({ name, value: value as number }))
-    // Fix: Explicitly cast to number to resolve potential TS arithmetic type errors on line 65 area.
-    .sort((a, b) => (b.value as number) - (a.value as number)); // Descending order
+    .sort((a, b) => (b.value as number) - (a.value as number));
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
-  // Last 6 months bar chart - Calculated RELATIVE to the selected date
   const barData = Array.from({ length: 6 }).map((_, i) => {
-    const d = new Date(date.getFullYear(), date.getMonth(), 1); // Start from selected month
-    // Fix: Cast i to number to avoid arithmetic operation errors if inferred incorrectly.
-    d.setMonth(d.getMonth() - (5 - (i as number))); // Go back (5-i) months
+    const d = new Date(date.getFullYear(), date.getMonth(), 1);
+    d.setMonth(d.getMonth() - (5 - (i as number)));
     const m = d.getMonth();
     const y = d.getFullYear();
     
@@ -111,7 +106,6 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
           <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-xl">
@@ -154,9 +148,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Receita vs Despesa (Left) */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           <h3 className="text-lg font-bold mb-6">Receita vs Despesa (6 Meses)</h3>
           <div className="h-64">
@@ -178,6 +170,13 @@ const Dashboard: React.FC = () => {
                   fill="#64748b" 
                   radius={[4, 4, 0, 0]} 
                   barSize={30}
+                  label={{ 
+                    position: 'top', 
+                    fill: theme === 'dark' ? '#94a3b8' : '#64748b', 
+                    fontSize: 10, 
+                    fontWeight: 'bold',
+                    formatter: (val: number) => val > 0 ? formatCurrency(val) : ''
+                  }}
                 />
                 <Line 
                   type="monotone" 
@@ -202,7 +201,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Gastos por Subcategoria (Right) */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           <h3 className="text-lg font-bold mb-6">Gastos por Subcategoria</h3>
           <div className="h-64">
@@ -250,7 +248,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Real vs Meta Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
         <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
           <h3 className="text-lg font-bold">Real vs Meta</h3>
@@ -275,7 +272,9 @@ const Dashboard: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
               {budgetComparison.map((item) => (
                 <tr key={item.category} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <td className="px-6 py-4 font-medium">{item.category}</td>
+                  <td className="px-6 py-4 font-medium">
+                    <CategoryBadge category={item.category} />
+                  </td>
                   <td className="px-6 py-4 font-mono">{formatCurrency(item.real)}</td>
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item.meta)}</td>
                   <td className={`px-6 py-4 text-right font-mono ${item.gap < 0 ? 'text-red-500' : 'text-green-500'}`}>

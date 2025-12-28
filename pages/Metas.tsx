@@ -5,6 +5,7 @@ import { BudgetGoal, ExpenseCategory } from '../types';
 import { EXPENSE_CATEGORIES } from '../constants';
 import { calculateSummary, formatCurrency } from '../utils/calculations';
 import { AlertCircle, CheckCircle2, Save } from 'lucide-react';
+import { CategoryBadge } from './Transactions';
 
 const Metas: React.FC = () => {
   const { budgetGoals, updateBudgetGoals, transactions } = useApp();
@@ -17,7 +18,6 @@ const Metas: React.FC = () => {
     setTotalIncome(s.income);
   }, [transactions]);
 
-  // Ensure all categories are present in goals
   useEffect(() => {
     const missing = EXPENSE_CATEGORIES.filter(cat => !goals.find(g => g.category === cat));
     if (missing.length > 0) {
@@ -74,7 +74,9 @@ const Metas: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                 {goals.map((g) => (
                   <tr key={g.category} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 font-medium">{g.category}</td>
+                    <td className="px-6 py-4 font-medium">
+                      <CategoryBadge category={g.category} />
+                    </td>
                     <td className="px-6 py-4 flex justify-center">
                       <div className="relative w-full max-w-[100px] flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus-within:ring-2 focus-within:ring-blue-600 transition-all overflow-hidden shadow-sm">
                         <input 
