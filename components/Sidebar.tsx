@@ -8,8 +8,10 @@ import {
   PieChart,
   Settings,
   PiggyBank,
-  ShieldCheck
+  ShieldCheck,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   currentPage: string;
@@ -17,14 +19,32 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
+  const { signOut, user } = useAuth();
+
   return (
-    <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col">
+    <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col h-screen h-max-screen sticky top-0">
       <div className="p-6 flex items-center gap-3">
         <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain rounded-xl" />
-        <h1 className="text-xl font-bold tracking-tight">Meta Finance</h1>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Meta Finance</h1>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-4">
+      <div className="px-6 mb-4">
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3 group transition-all hover:bg-slate-100/80">
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 shrink-0">
+            <span className="text-sm font-bold uppercase transition-transform group-hover:scale-110">
+              {user?.email?.charAt(0) || 'U'}
+            </span>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-blue-600 mb-0.5">Usuário Ativo</span>
+            <span className="text-sm font-bold text-slate-700 truncate" title={user?.email}>
+              {user?.email}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
         {/* Group: Finanças Pessoais */}
         <div className="space-y-1">
           <button
@@ -128,6 +148,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
           </button>
         </div>
       </nav>
+
+      <div className="p-4 border-t border-slate-100 mt-auto">
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
+        >
+          <LogOut size={20} />
+          Sair da conta
+        </button>
+      </div>
     </aside>
   );
 };

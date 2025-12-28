@@ -1,6 +1,8 @@
 
+
 import React, { useState } from 'react';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -10,9 +12,24 @@ import NovoAtivo from './pages/NovoAtivo';
 import NovoAporte from './pages/NovoAporte';
 import MetasInvestimento from './pages/MetasInvestimento';
 import Configuracoes from './pages/Configuracoes';
+import Login from './pages/Login';
+import { Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
+  const { user, loading: authLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   const renderPage = () => {
     switch (currentPage) {
@@ -38,9 +55,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </AuthProvider>
   );
 };
 
