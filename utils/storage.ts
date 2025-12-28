@@ -2,7 +2,7 @@ import { writeTextFile, readTextFile, exists, mkdir } from '@tauri-apps/plugin-f
 import { documentDir, join } from '@tauri-apps/api/path';
 
 // Check if we are running in a Tauri (Desktop) environment
-const isDesktop = () => !!(window as any).__TAURI_INTERNALS__;
+export const isDesktop = () => !!(window as any).__TAURI_INTERNALS__;
 
 const STORAGE_KEY = 'meta_finance_data';
 const CONFIG_PATH_KEY = 'meta_finance_desktop_path';
@@ -27,7 +27,8 @@ async function getDesktopFilePath(): Promise<string> {
             configuredPath = await join(defaultFolder, 'data.json');
         }
 
-        return configuredPath;
+        // Normalize path for Windows (remove potential quotes and fix slashes)
+        return configuredPath.replace(/^"|"$/g, '').trim();
     } catch (error) {
         console.error('[Storage] Error resolving desktop path:', error);
         throw error;
@@ -64,26 +65,27 @@ export const storage = {
         if (isDesktop()) {
             try {
                 const path = await getDesktopFilePath();
+                console.log(`[Storage] Checking desktop file at: "${path}"`);
+
                 if (await exists(path)) {
                     const content = await readTextFile(path);
-                    console.log(`[Storage] Loaded from desktop path: ${path}`);
+                    console.log(`[Storage] Loaded from desktop path: ${path} (${content.length} chars)`);
                     return JSON.parse(content);
                 } else {
-                    console.warn(`[Storage] Desktop file not found at: ${path}. Checking localStorage fallback...`);
+                    console.log(`[Storage] Desktop file not found at: ${path}. Checking localStorage fallback...`);
                 }
             } catch (error) {
                 console.error('[Storage] Desktop load error:', error);
             }
         }
 
-        // Fallback to localStorage (used for web or if desktop file is missing/error)
         const localData = localStorage.getItem(STORAGE_KEY);
         if (localData) {
-            console.log('[Storage] Loaded from localStorage fallback');
             try {
+                console.log('[Storage] Loaded from localStorage fallback');
                 return JSON.parse(localData);
-            } catch (e) {
-                console.error('[Storage] Error parsing localData:', e);
+            } catch (error) {
+                console.error('[Storage] Error parsing localData:', error);
             }
         }
 
@@ -91,8 +93,8 @@ export const storage = {
     },
 
     /**
-   * Returns true if running in desktop mode
-   */
+     * Returns true if running in desktop mode
+     */
     isDesktop(): boolean {
         return isDesktop();
     },
@@ -112,5 +114,3 @@ export const storage = {
         console.log(`[Storage] New desktop path set: ${path}`);
     }
 };
-
-export { isDesktop };
