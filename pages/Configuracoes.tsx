@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Download, Upload, Trash2, ShieldAlert, Info, Github } from 'lucide-react';
+import { Download, Upload, Trash2, ShieldAlert, Info } from 'lucide-react';
+import { PageHeader, Card } from '../components/ui';
 
 const Configuracoes: React.FC = () => {
   const { transactions, assets, budgetGoals, resetData, importData } = useApp();
@@ -27,37 +28,41 @@ const Configuracoes: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Configurações</h2>
-        <p className="text-slate-500 dark:text-slate-400">Personalização e gerenciamento de dados.</p>
-      </div>
+      <PageHeader
+        title="Configurações"
+        description="Personalização e gerenciamento de dados."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2"><Download size={20} /> Backup e Portabilidade</h3>
-            <p className="text-sm text-slate-500">Exporte seus dados para um arquivo local ou restaure um backup anterior.</p>
-            
+          <Card
+            padding="large"
+            title="Backup e Portabilidade"
+            headerAction={<Download size={20} />}
+            subtitle="Exporte seus dados para um arquivo local ou restaure um backup anterior."
+          >
             <div className="flex flex-col gap-3">
-              <button 
+              <button
                 onClick={handleExport}
                 className="flex items-center justify-center gap-2 w-full py-3 border-2 border-slate-100 dark:border-slate-700 hover:border-blue-600 hover:text-blue-600 rounded-2xl font-bold transition-all"
               >
                 <Download size={18} /> Exportar Backup (JSON)
               </button>
-              
+
               <label className="flex items-center justify-center gap-2 w-full py-3 border-2 border-slate-100 dark:border-slate-700 hover:border-blue-600 hover:text-blue-600 rounded-2xl font-bold cursor-pointer transition-all">
                 <Upload size={18} /> Importar Backup (JSON)
                 <input type="file" className="hidden" accept=".json" onChange={handleImport} />
               </label>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2 text-red-500"><Trash2 size={20} /> Zona de Perigo</h3>
-            <p className="text-sm text-slate-500">Ações irreversíveis que afetam permanentemente seus dados.</p>
-            
-            <button 
+          <Card
+            padding="large"
+            title="Zona de Perigo"
+            headerAction={<Trash2 size={20} className="text-red-500" />}
+            subtitle="Ações irreversíveis que afetam permanentemente seus dados."
+          >
+            <button
               onClick={() => {
                 if (window.confirm('Tem certeza? Isso apagará TODAS as suas transações e ativos.')) {
                   resetData();
@@ -67,12 +72,15 @@ const Configuracoes: React.FC = () => {
             >
               <Trash2 size={18} /> Resetar Todo o Aplicativo
             </button>
-          </div>
+          </Card>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2"><Info size={20} /> Sobre</h3>
+          <Card
+            padding="large"
+            title="Sobre"
+            headerAction={<Info size={20} />}
+          >
             <div className="space-y-4 text-sm text-slate-500">
               <div className="flex justify-between border-b dark:border-slate-700 pb-2">
                 <span>Versão</span>
@@ -87,12 +95,12 @@ const Configuracoes: React.FC = () => {
                 <span>Web / LocalStorage</span>
               </div>
             </div>
-            
-            <p className="text-xs leading-relaxed text-slate-400">
-              Meta Finance é um projeto open-source focado em privacidade. Seus dados nunca saem do seu navegador. 
+
+            <p className="mt-6 text-xs leading-relaxed text-slate-400">
+              Meta Finance é um projeto open-source focado em privacidade. Seus dados nunca saem do seu navegador.
               Utilizamos o armazenamento local (LocalStorage) para persistir suas informações de forma segura.
             </p>
-          </div>
+          </Card>
 
           <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4">
             <div className="flex items-center gap-2 text-blue-400 font-bold">
@@ -100,7 +108,7 @@ const Configuracoes: React.FC = () => {
               Segurança
             </div>
             <p className="text-sm opacity-80 leading-relaxed">
-              Lembre-se de fazer backups regulares. Como os dados são salvos apenas no navegador, 
+              Lembre-se de fazer backups regulares. Como os dados são salvos apenas no navegador,
               limpar o cache ou trocar de computador resultará na perda das informações se não houver um backup.
             </p>
           </div>

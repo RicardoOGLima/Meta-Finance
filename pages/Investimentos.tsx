@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { calculatePortfolioMetrics, formatCurrency } from '../utils/calculations';
 import { Plus, Edit2, Trash2, Star, Info, Filter } from 'lucide-react';
 import { Asset } from '../types';
-import { InvestmentBadge } from './Transactions';
+import { PageHeader, Badge, Card } from '../components/ui';
 
 const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPageChange }) => {
   const { assets, investmentGoals, deleteAsset, updateAsset, theme } = useApp();
@@ -14,9 +14,9 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
   const { totalValue, metrics, classAllocation } = calculatePortfolioMetrics(assets, investmentGoals);
 
   const availableClasses = ['Todas', ...Array.from(new Set(assets.map(a => a.class)))];
-  
-  const filteredMetrics = filterClass === 'Todas' 
-    ? metrics 
+
+  const filteredMetrics = filterClass === 'Todas'
+    ? metrics
     : metrics.filter(m => m.class === filterClass);
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -29,32 +29,32 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Investimentos</h2>
-          <p className="text-slate-500 dark:text-slate-400">Gestão de ativos e rebalanceamento.</p>
-        </div>
-        <button 
-          onClick={() => onPageChange('novo-ativo')}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
-        >
-          <Plus size={20} /> Novo Ativo
-        </button>
-      </div>
+      <PageHeader
+        title="Investimentos"
+        description="Gestão de ativos e rebalanceamento."
+        action={
+          <button
+            onClick={() => onPageChange('novo-ativo')}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+          >
+            <Plus size={20} /> Novo Ativo
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Portfolio Summary Sidebar */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 lg:col-span-1 transition-colors">
+        <Card className="lg:col-span-1">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Patrimônio Investido</p>
           <h3 className="text-3xl font-bold mt-1 text-slate-900 dark:text-slate-100">{formatCurrency(totalValue)}</h3>
-          
+
           <div className="mt-8 space-y-5">
             <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Distribuição por Classe</h4>
             <div className="space-y-5">
               {classAllocation.map(c => (
                 <div key={c.name} className="space-y-2 group">
                   <div className="flex justify-between items-center">
-                    <InvestmentBadge className={c.name} />
+                    <Badge label={c.name} variant="investment" />
                     <div className="flex gap-3 items-center text-[10px] font-bold">
                       <span className="text-slate-400 uppercase tracking-tighter">Meta {c.meta}%</span>
                       <span className="text-blue-600 dark:text-blue-400 text-sm font-black">{c.value.toFixed(1)}%</span>
@@ -62,26 +62,26 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-1.5 relative group-hover:bg-slate-200 dark:group-hover:bg-slate-800 transition-colors">
                     {c.meta > 0 && (
-                      <div 
-                        className="absolute top-[-2px] bottom-[-2px] w-[3px] bg-slate-800 dark:bg-slate-500 z-10 rounded-full shadow-sm" 
+                      <div
+                        className="absolute top-[-2px] bottom-[-2px] w-[3px] bg-slate-800 dark:bg-slate-500 z-10 rounded-full shadow-sm"
                         style={{ left: `${c.meta}%` }}
                         title={`Alvo: ${c.meta}%`}
                       />
                     )}
-                    <div 
-                      className={`h-full rounded-full transition-all duration-700 ease-out ${c.value > c.meta ? 'bg-indigo-500' : 'bg-blue-600'}`} 
-                      style={{ width: `${Math.min(c.value, 100)}%` }} 
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${c.value > c.meta ? 'bg-indigo-500' : 'bg-blue-600'}`}
+                      style={{ width: `${Math.min(c.value, 100)}%` }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-            
+
             {classAllocation.length === 0 && (
               <p className="text-xs text-slate-400 italic">Configure suas metas na aba "Metas de Investimento".</p>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Assets Table Container */}
         <div className="lg:col-span-2 space-y-4">
@@ -90,7 +90,7 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
               <Filter size={18} />
               <span className="text-xs font-bold uppercase tracking-wider">Filtrar:</span>
             </div>
-            <select 
+            <select
               className="flex-1 md:flex-none px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm transition-all focus:ring-2 focus:ring-blue-600 appearance-none cursor-pointer"
               value={filterClass}
               onChange={e => setFilterClass(e.target.value)}
@@ -99,7 +99,7 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
             </select>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+          <Card padding="none">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
@@ -119,7 +119,7 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">{a.ticker}</span>
-                          <InvestmentBadge className={a.class} />
+                          <Badge label={a.class} variant="investment" />
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -156,7 +156,7 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 
@@ -168,40 +168,40 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
               <div>
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Quantidade</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
                   value={editingAsset.quantity}
-                  onChange={e => setEditingAsset({...editingAsset, quantity: Number(e.target.value)})}
+                  onChange={e => setEditingAsset({ ...editingAsset, quantity: Number(e.target.value) })}
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Preço Atual (R$)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
                   value={editingAsset.currentPrice}
-                  onChange={e => setEditingAsset({...editingAsset, currentPrice: Number(e.target.value)})}
+                  onChange={e => setEditingAsset({ ...editingAsset, currentPrice: Number(e.target.value) })}
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nota (0-15)</label>
-                <input 
+                <input
                   type="number" min="0" max="15"
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
                   value={editingAsset.score || 0}
-                  onChange={e => setEditingAsset({...editingAsset, score: Math.min(15, Math.max(0, Number(e.target.value)))})}
+                  onChange={e => setEditingAsset({ ...editingAsset, score: Math.min(15, Math.max(0, Number(e.target.value))) })}
                 />
                 <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 italic flex items-center gap-1">
-                  <Info size={10} /> O % Ideal é ajustado automaticamente baseando-se nesta nota.
+                  <span className="shrink-0"><Info size={10} /></span> O % Ideal é ajustado automaticamente baseando-se nesta nota.
                 </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Observação</label>
-                <textarea 
+                <textarea
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none resize-none min-h-[80px] focus:ring-2 focus:ring-blue-600 transition-colors"
                   value={editingAsset.note}
-                  onChange={e => setEditingAsset({...editingAsset, note: e.target.value})}
+                  onChange={e => setEditingAsset({ ...editingAsset, note: e.target.value })}
                 />
               </div>
             </div>

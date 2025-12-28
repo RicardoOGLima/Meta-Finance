@@ -21,7 +21,7 @@ const AppContent: React.FC = () => {
       case 'despesas': return <Transactions type="DESPESA" />;
       case 'metas': return <Metas />;
       case 'investimentos': return <Investimentos onPageChange={setCurrentPage} />;
-      case 'novo-ativo': return <NovoAtivo onBack={() => setCurrentPage('investimentos')} />;
+      case 'novo-ativo': return <NovoAtivo onCancel={() => setCurrentPage('investimentos')} />;
       case 'novo-aporte': return <NovoAporte />;
       case 'metas-investimento': return <MetasInvestimento />;
       case 'configuracoes': return <Configuracoes />;

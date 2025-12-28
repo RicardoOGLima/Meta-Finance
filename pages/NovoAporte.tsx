@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { planContribution, formatCurrency } from '../utils/calculations';
 import { Calculator, TrendingUp, Info } from 'lucide-react';
-import { InvestmentBadge } from './Transactions';
+import { Badge } from '../components/ui';
 
 const NovoAporte: React.FC = () => {
   const { assets, investmentGoals } = useApp();
@@ -28,15 +27,15 @@ const NovoAporte: React.FC = () => {
             <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase text-xs tracking-wider">Valor do Aporte</h4>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none text-2xl font-mono font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 transition-all"
                 placeholder="0,00"
                 value={amount || ''}
                 onChange={e => setAmount(Number(e.target.value))}
               />
             </div>
-            <button 
+            <button
               onClick={handleCalculate}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
@@ -77,7 +76,7 @@ const NovoAporte: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1.5">
                             <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">{s.ticker}</span>
-                            <InvestmentBadge className={s.class} />
+                            <Badge label={s.class} variant="investment" />
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right font-mono font-bold text-green-600 dark:text-green-400">
