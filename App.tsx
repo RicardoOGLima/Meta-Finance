@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -17,12 +17,16 @@ import { Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isDataLoading } = useApp();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  if (authLoading) {
+  if (authLoading || isDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-blue-600" size={48} />
+          <p className="text-slate-500 font-medium animate-pulse">Carregando seus dados...</p>
+        </div>
       </div>
     );
   }

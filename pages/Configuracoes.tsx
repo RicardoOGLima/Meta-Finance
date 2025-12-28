@@ -1,11 +1,42 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Download, Upload, Trash2, ShieldAlert, Info } from 'lucide-react';
+import { Download, Upload, Trash2, ShieldAlert, Info, FolderSync, Monitor, CheckCircle } from 'lucide-react';
 import { PageHeader, Card } from '../components/ui';
+import { storage } from '../utils/storage';
+import { open } from '@tauri-apps/plugin-dialog';
+import toast from 'react-hot-toast';
 
 const Configuracoes: React.FC = () => {
   const { transactions, assets, budgetGoals, resetData, importData } = useApp();
+  const [desktopPath, setDesktopPath] = useState<string>('');
+
+  useEffect(() => {
+    if (storage.isDesktop()) {
+      storage.getConfiguredPath().then(setDesktopPath);
+    }
+  }, []);
+
+  const handleSelectFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Selecione sua pasta do Google Drive'
+      });
+
+      if (selected && typeof selected === 'string') {
+        // We append /data.json to the selected folder
+        const fullPath = `${selected}\\data.json`.replace(/\\\\/g, '\\');
+        storage.setConfiguredPath(fullPath);
+        setDesktopPath(fullPath);
+        toast.success('Pasta de sincronização atualizada!');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar pasta:', error);
+      toast.error('Não foi possível selecionar a pasta.');
+    }
+  };
 
   const handleExport = () => {
     const data = { transactions, assets, budgetGoals };
@@ -35,6 +66,34 @@ const Configuracoes: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
+          {storage.isDesktop() && (
+            <Card
+              padding="large"
+              title="Sincronização Desktop"
+              headerAction={<Monitor size={20} className="text-blue-600" />}
+              subtitle="Seus dados são salvos automaticamente no arquivo local abaixo."
+            >
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Caminho Atual</span>
+                  <p className="text-xs font-mono text-slate-600 dark:text-slate-300 break-all">{desktopPath}</p>
+                </div>
+
+                <button
+                  onClick={handleSelectFolder}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-2xl font-bold transition-all shadow-lg shadow-blue-600/20"
+                >
+                  <FolderSync size={18} /> Alterar Pasta de Sincronização
+                </button>
+
+                <div className="flex items-start gap-2 text-[11px] text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/10 p-3 rounded-xl">
+                  <CheckCircle size={14} className="shrink-0 mt-0.5" />
+                  Sincronização automática ativa. Qualquer alteração no app será salva instantaneamente neste arquivo.
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Card
             padding="large"
             title="Backup e Portabilidade"
@@ -84,7 +143,7 @@ const Configuracoes: React.FC = () => {
             <div className="space-y-4 text-sm text-slate-500">
               <div className="flex justify-between border-b dark:border-slate-700 pb-2">
                 <span>Versão</span>
-                <span className="font-mono">1.0.0-stable</span>
+                <span className="font-mono">1.1.0-hybrid</span>
               </div>
               <div className="flex justify-between border-b dark:border-slate-700 pb-2">
                 <span>Licença</span>
@@ -92,26 +151,31 @@ const Configuracoes: React.FC = () => {
               </div>
               <div className="flex justify-between border-b dark:border-slate-700 pb-2">
                 <span>Ambiente</span>
-                <span>Web / LocalStorage</span>
+                <span>{storage.isDesktop() ? 'Desktop / File System' : 'Web / LocalStorage'}</span>
               </div>
             </div>
 
             <p className="mt-6 text-xs leading-relaxed text-slate-400">
-              Meta Finance é um projeto open-source focado em privacidade. Seus dados nunca saem do seu navegador.
-              Utilizamos o armazenamento local (LocalStorage) para persistir suas informações de forma segura.
+              Meta Finance é um projeto open-source focado em privacidade.
+              {storage.isDesktop()
+                ? ' Na versão desktop, seus dados são armazenados diretamente no seu computador em um arquivo JSON.'
+                : ' Seus dados nunca saem do seu navegador. Utilizamos o armazenamento local (LocalStorage).'}
             </p>
           </Card>
 
-          <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4">
-            <div className="flex items-center gap-2 text-blue-400 font-bold">
-              <ShieldAlert size={20} />
-              Segurança
+          {!storage.isDesktop() && (
+            <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4">
+              <div className="flex items-center gap-2 text-blue-400 font-bold">
+                <ShieldAlert size={20} />
+                Segurança
+              </div>
+              <p className="text-sm opacity-80 leading-relaxed">
+                Lembre-se de fazer backups regulares. Como os dados são salvos apenas no navegador,
+                limpar o cache ou trocar de computador resultará na perda das informações se não houver um backup.
+                <b> Dica: Use a versão Desktop para sincronização automática com o Google Drive!</b>
+              </p>
             </div>
-            <p className="text-sm opacity-80 leading-relaxed">
-              Lembre-se de fazer backups regulares. Como os dados são salvos apenas no navegador,
-              limpar o cache ou trocar de computador resultará na perda das informações se não houver um backup.
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

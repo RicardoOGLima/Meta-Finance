@@ -9,9 +9,11 @@ import {
   Settings,
   PiggyBank,
   ShieldCheck,
-  LogOut
+  LogOut,
+  MonitorDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { isDesktop } from '../utils/storage';
 
 interface SidebarProps {
   currentPage: string;
@@ -20,6 +22,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
   const { signOut, user } = useAuth();
+  const runningInDesktop = isDesktop();
 
   return (
     <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col h-screen h-max-screen sticky top-0">
@@ -149,7 +152,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-slate-100 mt-auto">
+      <div className="p-4 border-t border-slate-100 space-y-2 mt-auto">
+        {!runningInDesktop && (
+          <a
+            href="https://github.com/RicardoOGLima/Meta-Finance/releases/latest"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all border border-blue-100"
+          >
+            <MonitorDown size={20} />
+            Baixar Desktop
+          </a>
+        )}
         <button
           onClick={signOut}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"

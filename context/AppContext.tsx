@@ -1,7 +1,8 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Transaction, Asset, BudgetGoal, InvestmentGoal, AppState } from '../types';
 import { INITIAL_BUDGET_GOALS, INITIAL_INVESTMENT_GOALS } from '../constants';
+import { storage } from '../utils/storage';
 import toast from 'react-hot-toast';
 
 interface AppContextType extends AppState {
@@ -16,40 +17,64 @@ interface AppContextType extends AppState {
   toggleTheme: () => void;
   resetData: () => void;
   importData: (json: string) => void;
+  isDataLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('meta_finance_state');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Robust reconstruction to ensure no property is undefined
-        return {
-          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
-          assets: Array.isArray(parsed.assets) ? parsed.assets : [],
-          budgetGoals: Array.isArray(parsed.budgetGoals) ? parsed.budgetGoals : INITIAL_BUDGET_GOALS,
-          investmentGoals: Array.isArray(parsed.investmentGoals) ? parsed.investmentGoals : INITIAL_INVESTMENT_GOALS,
-          theme: 'light' // Always forced to light as per previous request
-        };
-      } catch (e) {
-        console.error("Erro ao carregar estado salvo:", e);
-      }
-    }
-    return {
-      transactions: [],
-      assets: [],
-      budgetGoals: INITIAL_BUDGET_GOALS,
-      investmentGoals: INITIAL_INVESTMENT_GOALS,
-      theme: 'light'
-    };
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [state, setState] = useState<AppState>({
+    transactions: [],
+    assets: [],
+    budgetGoals: INITIAL_BUDGET_GOALS,
+    investmentGoals: INITIAL_INVESTMENT_GOALS,
+    theme: 'light'
   });
 
+  const hasLoaded = useRef(false);
+
+  // Initial load
   useEffect(() => {
-    localStorage.setItem('meta_finance_state', JSON.stringify(state));
-    document.documentElement.classList.remove('dark');
+    const loadData = async () => {
+      console.log("[AppContext] Starting initial data load...");
+      try {
+        const saved = await storage.load();
+        if (saved) {
+          console.log("[AppContext] Data loaded successfully from storage:", {
+            transactionCount: saved.transactions?.length || 0,
+            assetCount: saved.assets?.length || 0,
+            hasBudgetGoals: !!saved.budgetGoals,
+            hasInvestmentGoals: !!saved.investmentGoals
+          });
+          setState({
+            transactions: Array.isArray(saved.transactions) ? saved.transactions : [],
+            assets: Array.isArray(saved.assets) ? saved.assets : [],
+            budgetGoals: Array.isArray(saved.budgetGoals) ? saved.budgetGoals : INITIAL_BUDGET_GOALS,
+            investmentGoals: Array.isArray(saved.investmentGoals) ? saved.investmentGoals : INITIAL_INVESTMENT_GOALS,
+            theme: 'light'
+          });
+        } else {
+          console.log("[AppContext] No saved data found, using defaults.");
+        }
+      } catch (e) {
+        console.error("[AppContext] Error during initial data load:", e);
+        toast.error("Erro ao carregar dados. Usando padrões.");
+      } finally {
+        setIsDataLoading(false);
+        hasLoaded.current = true;
+        console.log("[AppContext] Initial data load complete.");
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Sync state to storage
+  useEffect(() => {
+    if (hasLoaded.current) {
+      storage.save(state);
+    }
   }, [state]);
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
@@ -132,7 +157,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleTheme = () => {
-    // Kept for interface compatibility but logic is forced light
     setState(prev => ({ ...prev, theme: 'light' }));
   };
 
@@ -150,7 +174,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const importData = (json: string) => {
     try {
       const parsed = JSON.parse(json);
-      // Explicit reconstruction during import to prevent schema mismatches
       setState({
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
         assets: Array.isArray(parsed.assets) ? parsed.assets : [],
@@ -182,7 +205,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateInvestmentGoals,
       toggleTheme,
       resetData,
-      importData
+      importData,
+      isDataLoading
     }}>
       {children}
     </AppContext.Provider>
