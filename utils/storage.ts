@@ -1,4 +1,4 @@
-import { writeTextFile, readTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { writeTextFile, readTextFile, exists, mkdir, rename, remove } from '@tauri-apps/plugin-fs';
 import { documentDir, join } from '@tauri-apps/api/path';
 
 // Check if we are running in a Tauri (Desktop) environment
@@ -45,8 +45,25 @@ export const storage = {
         if (isDesktop()) {
             try {
                 const path = await getDesktopFilePath();
-                await writeTextFile(path, jsonString);
-                console.log(`[Storage] Saved to desktop path: ${path}`);
+                const tempPath = `${path}.tmp`;
+                const backupPath = `${path}.bak`;
+
+                // 1. Write to temporary file
+                await writeTextFile(tempPath, jsonString);
+
+                // 2. If main file exists, rotate it to backup
+                if (await exists(path)) {
+                    // Remove old backup if exists to allow rename
+                    if (await exists(backupPath)) {
+                        await remove(backupPath);
+                    }
+                    await rename(path, backupPath);
+                    console.log(`[Storage] Old data moved to backup: ${backupPath}`);
+                }
+
+                // 3. Rename temporary file to main path
+                await rename(tempPath, path);
+                console.log(`[Storage] Atomic save complete: ${path}`);
             } catch (error) {
                 console.error('[Storage] Desktop save error:', error);
                 // Fallback to localStorage on error
