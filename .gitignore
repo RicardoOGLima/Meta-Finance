@@ -23,3 +23,4 @@ MAINTENANCE_GUIDE.md
 *.njsproj
 *.sln
 *.sw?
+src-tauri/*.key
