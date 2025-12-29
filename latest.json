@@ -1,11 +1,11 @@
 {
-    "version": "0.2.0",
+    "version": "0.2.1",
     "notes": "Novas funcionalidades e melhorias na interface.",
-    "pub_date": "2025-12-28T23:32:54Z",
+    "pub_date": "2025-12-29T02:10:42Z",
     "platforms": {
         "windows-x86_64": {
-            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRMFFaNjMyM3hrV1o5SjNiZUlOemswV3RPNlEwNHh0NlY2Zk80aVVvQW5VYm90cjBSU2R4UUM0ZHpEaG95WHdoODM1d0NQenQ3bURVc3hlQmF6L05VazJ3eU52UmNRbkF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2OTc1MTQ0CWZpbGU6bWV0YS1maW5hbmNlXzAuMi4wX3g2NF9lbi1VUy5tc2kKeENWMWJuUVVYRmNnMVM0ZXN4NVJCMURFQ1QyaDFrTkp6VzdndkFPRzNRbytabjZpNFB5d2FxWHUrR3BlWlRqdkZ5OXMydFM4SzFTRXNGYUpBQ1A3QVE9PQo=",
-            "url": "https://github.com/RicardoOGLima/Meta-Finance/releases/download/v0.2.0/meta-finance_0.2.0_x64_en-US.msi"
+            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRMFFaNjMyM3hrV2JrOHAxSDBsWnZ3TmVEK3ZPQU5jRTNHMkt6djdKTmhoUUpSTVhZRmsvTm12ZEp5UVJXWDI3MTQvZ1QvaUI4NlN5VFZPSFF2NmtyWGpCSWt5ZjhwTWd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2OTg0Nzg4CWZpbGU6bWV0YS1maW5hbmNlXzAuMi4xX3g2NF9lbi1VUy5tc2kKUFRMbEtxS0NnZDhQSnhVRzNoNE80ejFETTJkUWZyMnVwTXdsVnFqTlREcEEwbEkvb2xqdTljeEdhTFQ0S3E3MUVvVGh3L1NaVzJLS0NNeGpycXNWQ2c9PQo=",
+            "url": "https://github.com/RicardoOGLima/Meta-Finance/releases/download/v0.2.1/meta-finance_0.2.1_x64_en-US.msi"
         }
     }
 }
