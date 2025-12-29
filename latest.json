@@ -1,11 +1,11 @@
 {
-    "version": "v0.1.1",
-    "notes": "Nova identidade visual e correção na persistência de dados do Google Drive.",
-    "pub_date": "2025-12-28T16:05:00Z",
+    "version": "v0.2.0",
+    "notes": "Novas funcionalidades e melhorias na interface.",
+    "pub_date": "2025-12-28T23:16:13Z",
     "platforms": {
         "windows-x86_64": {
-            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRMFFaNjMyM3hrV2FwdmZEQ0F1OVl6ajhMeHBWN2dwVU9hSXV4NXhCZkNYZFM5eHVoY2kzL0hHQmhKcjBSUUdJSHMzcUYzenZmTmJXSzdHT25KRERqOS9QZDBESjVTbndjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2OTQ3NjQ2CWZpbGU6bWV0YS1maW5hbmNlXzAuMS4wX3g2NF9lbi1VUy5tc2kKVis1Z0hLejJnOStoNWhPNHp1Zm5QOUQvSEVzTVo2VEFNUGNxQVRacXpXVVA3Yi9DVlY2azlrSTNaWmFKOE5QNG9JaEVwUnRYaGhyREV4eU5GOEw2QVE9PQo=",
-            "url": "https://github.com/RicardoOGLima/Meta-Finance/releases/download/v0.1.1/meta-finance_0.1.0_x64_en-US.msi"
+            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRMFFaNjMyM3hrV1lwb1dyQWJUYzNyNjlGQm9mb0FSbkxnNnlUUHRqQmQvRGpNNHNTMFVERWFaclIzNW5WMjErc0ZhS3ZkWURvMzR2UnNoamJPM05CbXBYNTN2UGhhQnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2OTc0MDgzCWZpbGU6bWV0YS1maW5hbmNlXzAuMS4xX3g2NF9lbi1VUy5tc2kKbTQ3cHpLM2VGclNwTlBKUnpGbjBSMHIrWnRrTDA3Zldibzl2YU95SW5qQVBPUzJlajVMaTVMUTdTem9SYmJmZktuSzViY0NCRGZzQ1lHTlI5bjNrREE9PQo=",
+            "url": "https://github.com/RicardoOGLima/Meta-Finance/releases/download/v0.2.0/meta-finance_0.1.1_x64_en-US.msi"
         }
     }
 }
