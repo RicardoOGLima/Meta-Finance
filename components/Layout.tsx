@@ -12,7 +12,6 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 text-slate-900">
-      <Toaster position="top-right" />
 
       <Sidebar currentPage={currentPage} onPageChange={onPageChange} />
 
