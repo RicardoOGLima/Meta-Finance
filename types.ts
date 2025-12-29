@@ -52,6 +52,8 @@ export interface Asset {
   score: number; // Numeric score 0-15
   quantity: number;
   currentPrice: number;
+  averagePrice: number;
+  totalDividends: number;
   idealPercentage: number;
 }
 

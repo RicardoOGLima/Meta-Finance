@@ -12,6 +12,7 @@ import NovoAtivo from './pages/NovoAtivo';
 import NovoAporte from './pages/NovoAporte';
 import MetasInvestimento from './pages/MetasInvestimento';
 import Configuracoes from './pages/Configuracoes';
+import Forecast from './pages/Forecast';
 import Login from './pages/Login';
 import { Loader2 } from 'lucide-react';
 
@@ -46,6 +47,7 @@ const AppContent: React.FC = () => {
       case 'novo-aporte': return <NovoAporte />;
       case 'metas-investimento': return <MetasInvestimento />;
       case 'configuracoes': return <Configuracoes />;
+      case 'forecast': return <Forecast />;
       default: return <Dashboard />;
     }
   };

@@ -10,7 +10,8 @@ import {
   PiggyBank,
   ShieldCheck,
   LogOut,
-  MonitorDown
+  MonitorDown,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isDesktop } from '../utils/storage';
@@ -94,6 +95,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
             >
               <Target size={16} />
               Metas de Gastos
+            </button>
+            <button
+              onClick={() => onPageChange('forecast')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-medium transition-all ${currentPage === 'forecast'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              <LayoutDashboard size={16} />
+              Forecast Financeiro
             </button>
           </div>
         </div>
