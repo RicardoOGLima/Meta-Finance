@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Download, Upload, Trash2, ShieldAlert, Info, FolderSync, Monitor, CheckCircle } from 'lucide-react';
+import { Download, Upload, Trash2, ShieldAlert, Info, FolderSync, Monitor, CheckCircle, Tag, Pencil } from 'lucide-react';
 import { PageHeader, Card } from '../components/ui';
 import { storage } from '../utils/storage';
 import { open } from '@tauri-apps/plugin-dialog';
 import toast from 'react-hot-toast';
 
 const Configuracoes: React.FC = () => {
-  const { transactions, assets, budgetGoals, resetData, importData } = useApp();
+  const { transactions, assets, budgetGoals, subcategories, updateSubcategories, resetData, importData } = useApp();
   const [desktopPath, setDesktopPath] = useState<string>('');
+  const [newSubName, setNewSubName] = useState('');
+  const [editingSub, setEditingSub] = useState<{ index: number, name: string } | null>(null);
 
   useEffect(() => {
     if (storage.isDesktop()) {
@@ -54,6 +56,31 @@ const Configuracoes: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (ev) => importData(ev.target?.result as string);
       reader.readAsText(file);
+    }
+  };
+
+  const handleAddSub = () => {
+    if (!newSubName.trim()) return;
+    if (subcategories.includes(newSubName.trim())) {
+      toast.error('Esta subcategoria já existe!');
+      return;
+    }
+    updateSubcategories([...subcategories, newSubName.trim()]);
+    setNewSubName('');
+  };
+
+  const handleEditSub = () => {
+    if (!editingSub || !editingSub.name.trim()) return;
+    const newList = [...subcategories];
+    newList[editingSub.index] = editingSub.name.trim();
+    updateSubcategories(newList);
+    setEditingSub(null);
+  };
+
+  const handleDeleteSub = (index: number) => {
+    if (window.confirm('Tem certeza que deseja excluir esta subcategoria?')) {
+      const newList = subcategories.filter((_, i) => i !== index);
+      updateSubcategories(newList);
     }
   };
 
@@ -176,6 +203,71 @@ const Configuracoes: React.FC = () => {
               </p>
             </div>
           )}
+
+          <Card
+            padding="large"
+            title="Gerenciar Subcategorias"
+            headerAction={<Tag size={20} className="text-blue-600" />}
+            subtitle="Adicione ou edite subcategorias de despesas."
+          >
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Nova subcategoria..."
+                  className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm"
+                  value={newSubName}
+                  onChange={e => setNewSubName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddSub()}
+                />
+                <button
+                  onClick={handleAddSub}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm"
+                >
+                  Adicionar
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                {subcategories.map((sub, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl group">
+                    {editingSub?.index === idx ? (
+                      <div className="flex gap-2 w-full">
+                        <input
+                          type="text"
+                          className="flex-1 px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-blue-600 text-sm"
+                          value={editingSub.name}
+                          onChange={e => setEditingSub({ ...editingSub, name: e.target.value })}
+                          onKeyDown={e => e.key === 'Enter' && handleEditSub()}
+                          autoFocus
+                        />
+                        <button onClick={handleEditSub} className="text-green-600 hover:text-green-700 font-bold text-xs uppercase">Salvar</button>
+                        <button onClick={() => setEditingSub(null)} className="text-slate-400 hover:text-slate-500 font-bold text-xs uppercase">X</button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{sub}</span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => setEditingSub({ index: idx, name: sub })}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSub(idx)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

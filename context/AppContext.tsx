@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Transaction, Asset, BudgetGoal, InvestmentGoal, AppState, Dividend } from '../types';
-import { INITIAL_BUDGET_GOALS, INITIAL_INVESTMENT_GOALS } from '../constants';
+import { INITIAL_BUDGET_GOALS, INITIAL_INVESTMENT_GOALS, EXPENSE_SUBCATEGORIES } from '../constants';
 import { storage } from '../utils/storage';
 import toast from 'react-hot-toast';
 
@@ -17,6 +17,7 @@ interface AppContextType extends AppState {
   deleteDividend: (id: string) => void;
   updateBudgetGoals: (goals: BudgetGoal[]) => void;
   updateInvestmentGoals: (goals: InvestmentGoal[]) => void;
+  updateSubcategories: (subs: string[]) => void;
   toggleTheme: () => void;
   resetData: () => void;
   importData: (json: string) => void;
@@ -33,6 +34,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dividends: [],
     budgetGoals: INITIAL_BUDGET_GOALS,
     investmentGoals: INITIAL_INVESTMENT_GOALS,
+    subcategories: EXPENSE_SUBCATEGORIES,
     theme: 'light'
   });
 
@@ -57,6 +59,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             dividends: Array.isArray(saved.dividends) ? saved.dividends : [],
             budgetGoals: Array.isArray(saved.budgetGoals) ? saved.budgetGoals : INITIAL_BUDGET_GOALS,
             investmentGoals: Array.isArray(saved.investmentGoals) ? saved.investmentGoals : INITIAL_INVESTMENT_GOALS,
+            subcategories: Array.isArray(saved.subcategories) ? saved.subcategories : EXPENSE_SUBCATEGORIES,
             theme: 'light'
           });
         } else {
@@ -161,6 +164,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success('Metas de investimento salvas!');
   };
 
+  const updateSubcategories = (subs: string[]) => {
+    setState(prev => ({ ...prev, subcategories: subs }));
+    toast.success('Subcategorias atualizadas!');
+  };
+
   const addDividend = (d: Omit<Dividend, 'id'>) => {
     const newDividend = { ...d, id: Math.random().toString(36).substr(2, 9) };
     setState(prev => {
@@ -228,6 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dividends: [],
       budgetGoals: INITIAL_BUDGET_GOALS,
       investmentGoals: INITIAL_INVESTMENT_GOALS,
+      subcategories: EXPENSE_SUBCATEGORIES,
       theme: 'light'
     });
     toast.success('Dados resetados!');
@@ -242,6 +251,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dividends: Array.isArray(parsed.dividends) ? parsed.dividends : [],
         budgetGoals: Array.isArray(parsed.budgetGoals) ? parsed.budgetGoals : INITIAL_BUDGET_GOALS,
         investmentGoals: Array.isArray(parsed.investmentGoals) ? parsed.investmentGoals : INITIAL_INVESTMENT_GOALS,
+        subcategories: Array.isArray(parsed.subcategories) ? parsed.subcategories : EXPENSE_SUBCATEGORIES,
         theme: 'light'
       });
       toast.success('Dados importados com sucesso!');
@@ -258,6 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dividends: state.dividends || [],
       budgetGoals: state.budgetGoals || INITIAL_BUDGET_GOALS,
       investmentGoals: state.investmentGoals || INITIAL_INVESTMENT_GOALS,
+      subcategories: state.subcategories || EXPENSE_SUBCATEGORIES,
       theme: 'light',
       addTransaction,
       deleteTransaction,
@@ -270,6 +281,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deleteDividend,
       updateBudgetGoals,
       updateInvestmentGoals,
+      updateSubcategories,
       toggleTheme,
       resetData,
       importData,

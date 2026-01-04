@@ -76,5 +76,6 @@ export interface AppState {
   dividends?: Dividend[]; // Optional for backward compatibility with saved data
   budgetGoals: BudgetGoal[];
   investmentGoals: InvestmentGoal[];
+  subcategories: string[];
   theme: 'light' | 'dark';
 }

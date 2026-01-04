@@ -4,7 +4,7 @@ import {
     ShieldCheck, Coffee, Flag, Gamepad2, Gem,
     BookOpen, Banknote, Key, Briefcase, Store,
     MoreHorizontal, TrendingUp, Globe, Building2,
-    Building, Coins, Landmark, Globe2
+    Building, Coins, Landmark, Globe2, Wallet, Receipt, PieChart
 } from 'lucide-react';
 import { ExpenseCategory, IncomeCategory } from '../../types';
 
@@ -40,6 +40,12 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'category', class
                     return { color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400', icon: <Briefcase size={14} /> };
                 case IncomeCategory.NEGOCIOS:
                     return { color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400', icon: <Store size={14} /> };
+                case 'Dividendos':
+                    return { color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400', icon: <Wallet size={14} /> };
+                case 'JSCP':
+                    return { color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400', icon: <Receipt size={14} /> };
+                case 'Rendimento':
+                    return { color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400', icon: <PieChart size={14} /> };
                 default:
                     return { color: 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400', icon: <MoreHorizontal size={14} /> };
             }

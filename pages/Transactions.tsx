@@ -5,7 +5,7 @@ import { TransactionType, Transaction, ExpenseCategory, IncomeCategory } from '.
 import { formatCurrency } from '../utils/calculations';
 import TransactionModal from '../components/TransactionModal';
 import {
-  Plus, Search, Trash2
+  Plus, Search, Trash2, Pencil
 } from 'lucide-react';
 import { PageHeader, Badge, Card } from '../components/ui';
 
@@ -14,8 +14,9 @@ interface TransactionsPageProps {
 }
 
 const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
-  const { transactions, deleteTransaction, addTransaction } = useApp();
+  const { transactions, deleteTransaction, addTransaction, updateTransaction } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
 
@@ -34,7 +35,10 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
         description="Gerencie seus fluxos financeiros."
         action={
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingTransaction(null);
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
           >
             <Plus size={20} /> Nova {type === 'RECCEITA' ? 'Receita' : 'Despesa'}
@@ -96,8 +100,19 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2">
                       <button
+                        onClick={() => {
+                          setEditingTransaction(t);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
                         onClick={() => deleteTransaction(t.id)}
                         className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                        title="Excluir"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -119,8 +134,18 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
       <TransactionModal
         type={type}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={addTransaction}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        onSave={(data) => {
+          if ('id' in data) {
+            updateTransaction(data as Transaction);
+          } else {
+            addTransaction(data);
+          }
+        }}
+        editingTransaction={editingTransaction}
       />
     </div>
   );
