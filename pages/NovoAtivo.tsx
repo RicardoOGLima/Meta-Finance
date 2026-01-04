@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { INVESTMENT_CLASSES } from '../constants';
-import { Plus, Info, Save, X } from 'lucide-react';
+import { Info, Save, X } from 'lucide-react';
 import { PageHeader, Card } from '../components/ui';
 
 const NovoAtivo: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
@@ -12,7 +11,6 @@ const NovoAtivo: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const [quantity, setQuantity] = useState<number>(0);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [averagePrice, setAveragePrice] = useState<number>(0);
-  const [totalDividends, setTotalDividends] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
   const [note, setNote] = useState('');
 
@@ -26,7 +24,6 @@ const NovoAtivo: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       quantity,
       currentPrice,
       averagePrice,
-      totalDividends,
       score,
       note,
       idealPercentage: 0
@@ -101,26 +98,14 @@ const NovoAtivo: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Preço Médio (R$)</label>
-                    <input
-                      type="number" step="any" required
-                      className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none focus:border-blue-600 transition-all font-mono font-bold"
-                      value={averagePrice || ''}
-                      onChange={e => setAveragePrice(Number(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Total Proventos (R$)</label>
-                    <input
-                      type="number" step="any"
-                      className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none focus:border-green-600 transition-all font-mono font-bold text-green-600"
-                      placeholder="Total recebido"
-                      value={totalDividends || ''}
-                      onChange={e => setTotalDividends(Number(e.target.value))}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Preço Médio (R$)</label>
+                  <input
+                    type="number" step="any" required
+                    className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none focus:border-blue-600 transition-all font-mono font-bold"
+                    value={averagePrice || ''}
+                    onChange={e => setAveragePrice(Number(e.target.value))}
+                  />
                 </div>
               </div>
 

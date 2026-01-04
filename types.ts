@@ -55,7 +55,6 @@ export interface Asset {
   quantity: number;
   currentPrice: number;
   averagePrice: number;
-  totalDividends: number;
   idealPercentage: number;
 }
 

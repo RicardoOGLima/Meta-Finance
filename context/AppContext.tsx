@@ -171,57 +171,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addDividend = (d: Omit<Dividend, 'id'>) => {
     const newDividend = { ...d, id: Math.random().toString(36).substr(2, 9) };
-    setState(prev => {
-      // Update the asset's total dividends as well
-      const updatedAssets = (prev.assets || []).map(a =>
-        a.id === d.assetId ? { ...a, totalDividends: (a.totalDividends || 0) + d.totalValue } : a
-      );
-
-      return {
-        ...prev,
-        dividends: [...(prev.dividends || []), newDividend],
-        assets: updatedAssets
-      };
-    });
+    setState(prev => ({
+      ...prev,
+      dividends: [...(prev.dividends || []), newDividend]
+    }));
     toast.success('Provento registrado!');
   };
 
   const updateDividend = (updated: Dividend) => {
-    setState(prev => {
-      const oldDividend = (prev.dividends || []).find(d => d.id === updated.id);
-      if (!oldDividend) return prev;
-
-      const updatedAssets = (prev.assets || []).map(a => {
-        let val = a.totalDividends || 0;
-        if (a.id === oldDividend.assetId) val -= oldDividend.totalValue;
-        if (a.id === updated.assetId) val += updated.totalValue;
-        return { ...a, totalDividends: Math.max(0, val) };
-      });
-
-      return {
-        ...prev,
-        dividends: (prev.dividends || []).map(d => d.id === updated.id ? updated : d),
-        assets: updatedAssets
-      };
-    });
+    setState(prev => ({
+      ...prev,
+      dividends: (prev.dividends || []).map(d => d.id === updated.id ? updated : d)
+    }));
     toast.success('Provento atualizado!');
   };
 
   const deleteDividend = (id: string) => {
-    setState(prev => {
-      const dividendToDelete = (prev.dividends || []).find(d => d.id === id);
-      if (!dividendToDelete) return prev;
-
-      const updatedAssets = (prev.assets || []).map(a =>
-        a.id === dividendToDelete.assetId ? { ...a, totalDividends: Math.max(0, (a.totalDividends || 0) - dividendToDelete.totalValue) } : a
-      );
-
-      return {
-        ...prev,
-        dividends: (prev.dividends || []).filter(d => d.id !== id),
-        assets: updatedAssets
-      };
-    });
+    setState(prev => ({
+      ...prev,
+      dividends: (prev.dividends || []).filter(d => d.id !== id)
+    }));
     toast.success('Provento removido!');
   };
 

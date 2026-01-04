@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculatePortfolioMetrics, formatCurrency } from '../utils/calculations';
 import { Plus, Edit2, Trash2, Star, Info, Filter, Zap, ChevronRight } from 'lucide-react';
@@ -10,11 +10,25 @@ import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, Res
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'];
 
 const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPageChange }) => {
-  const { assets, investmentGoals, deleteAsset, updateAsset, theme } = useApp();
+  const { assets, dividends, investmentGoals, deleteAsset, updateAsset, theme } = useApp();
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [filterClass, setFilterClass] = useState('Todas');
 
-  const { totalValue, metrics, classAllocation } = calculatePortfolioMetrics(assets, investmentGoals);
+  // Calculate dynamic dividends for each asset ticker
+  const assetsWithDividends = useMemo(() => {
+    return assets.map(asset => {
+      const assetDividends = dividends
+        .filter(d => d.assetId === asset.id)
+        .reduce((sum, d) => sum + d.totalValue, 0);
+
+      return {
+        ...asset,
+        totalDividends: assetDividends
+      };
+    });
+  }, [assets, dividends]);
+
+  const { totalValue, metrics, classAllocation } = calculatePortfolioMetrics(assetsWithDividends, investmentGoals);
 
   const availableClasses = ['Todas', ...Array.from(new Set(assets.map(a => a.class)))];
 
@@ -334,18 +348,18 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
                   onChange={e => setEditingAsset({ ...editingAsset, quantity: Number(e.target.value) })}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Preço Atual (R$)</label>
-                <input
-                  type="number" step="any"
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors font-mono"
-                  value={editingAsset.currentPrice}
-                  onChange={e => setEditingAsset({ ...editingAsset, currentPrice: Number(e.target.value) })}
-                />
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">P. Médio (R$)</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 font-mono">Preço Atual (R$)</label>
+                  <input
+                    type="number" step="any"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors font-mono"
+                    value={editingAsset.currentPrice}
+                    onChange={e => setEditingAsset({ ...editingAsset, currentPrice: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 font-mono">P. Médio (R$)</label>
                   <input
                     type="number" step="any"
                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors font-mono"
@@ -353,18 +367,9 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
                     onChange={e => setEditingAsset({ ...editingAsset, averagePrice: Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Proventos (R$)</label>
-                  <input
-                    type="number" step="any"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-600 transition-colors font-mono text-green-600"
-                    value={editingAsset.totalDividends || 0}
-                    onChange={e => setEditingAsset({ ...editingAsset, totalDividends: Number(e.target.value) })}
-                  />
-                </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nota (0-15)</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 text-blue-600">Nota (0-15)</label>
                 <input
                   type="number" min="0" max="15"
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
