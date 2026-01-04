@@ -1,4 +1,6 @@
 
+export type DividendType = 'Dividendos' | 'JSCP' | 'Rendimento';
+
 export type TransactionType = 'RECCEITA' | 'DESPESA';
 
 export enum ExpenseCategory {
@@ -57,9 +59,21 @@ export interface Asset {
   idealPercentage: number;
 }
 
+export interface Dividend {
+  id: string;
+  date: string; // ISO format
+  assetId: string;
+  ticker: string;
+  class: string;
+  type: DividendType;
+  valuePerShare: number;
+  totalValue: number;
+}
+
 export interface AppState {
   transactions: Transaction[];
   assets: Asset[];
+  dividends?: Dividend[]; // Optional for backward compatibility with saved data
   budgetGoals: BudgetGoal[];
   investmentGoals: InvestmentGoal[];
   theme: 'light' | 'dark';

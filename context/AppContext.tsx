@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Transaction, Asset, BudgetGoal, InvestmentGoal, AppState } from '../types';
+import { Transaction, Asset, BudgetGoal, InvestmentGoal, AppState, Dividend } from '../types';
 import { INITIAL_BUDGET_GOALS, INITIAL_INVESTMENT_GOALS } from '../constants';
 import { storage } from '../utils/storage';
 import toast from 'react-hot-toast';
@@ -12,6 +12,9 @@ interface AppContextType extends AppState {
   addAsset: (a: Omit<Asset, 'id'>) => void;
   updateAsset: (a: Asset) => void;
   deleteAsset: (id: string) => void;
+  addDividend: (d: Omit<Dividend, 'id'>) => void;
+  updateDividend: (d: Dividend) => void;
+  deleteDividend: (id: string) => void;
   updateBudgetGoals: (goals: BudgetGoal[]) => void;
   updateInvestmentGoals: (goals: InvestmentGoal[]) => void;
   toggleTheme: () => void;
@@ -27,6 +30,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [state, setState] = useState<AppState>({
     transactions: [],
     assets: [],
+    dividends: [],
     budgetGoals: INITIAL_BUDGET_GOALS,
     investmentGoals: INITIAL_INVESTMENT_GOALS,
     theme: 'light'
@@ -50,6 +54,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setState({
             transactions: Array.isArray(saved.transactions) ? saved.transactions : [],
             assets: Array.isArray(saved.assets) ? saved.assets : [],
+            dividends: Array.isArray(saved.dividends) ? saved.dividends : [],
             budgetGoals: Array.isArray(saved.budgetGoals) ? saved.budgetGoals : INITIAL_BUDGET_GOALS,
             investmentGoals: Array.isArray(saved.investmentGoals) ? saved.investmentGoals : INITIAL_INVESTMENT_GOALS,
             theme: 'light'
@@ -156,6 +161,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success('Metas de investimento salvas!');
   };
 
+  const addDividend = (d: Omit<Dividend, 'id'>) => {
+    const newDividend = { ...d, id: Math.random().toString(36).substr(2, 9) };
+    setState(prev => {
+      // Update the asset's total dividends as well
+      const updatedAssets = (prev.assets || []).map(a =>
+        a.id === d.assetId ? { ...a, totalDividends: (a.totalDividends || 0) + d.totalValue } : a
+      );
+
+      return {
+        ...prev,
+        dividends: [...(prev.dividends || []), newDividend],
+        assets: updatedAssets
+      };
+    });
+    toast.success('Provento registrado!');
+  };
+
+  const updateDividend = (updated: Dividend) => {
+    setState(prev => {
+      const oldDividend = (prev.dividends || []).find(d => d.id === updated.id);
+      if (!oldDividend) return prev;
+
+      const updatedAssets = (prev.assets || []).map(a => {
+        let val = a.totalDividends || 0;
+        if (a.id === oldDividend.assetId) val -= oldDividend.totalValue;
+        if (a.id === updated.assetId) val += updated.totalValue;
+        return { ...a, totalDividends: Math.max(0, val) };
+      });
+
+      return {
+        ...prev,
+        dividends: (prev.dividends || []).map(d => d.id === updated.id ? updated : d),
+        assets: updatedAssets
+      };
+    });
+    toast.success('Provento atualizado!');
+  };
+
+  const deleteDividend = (id: string) => {
+    setState(prev => {
+      const dividendToDelete = (prev.dividends || []).find(d => d.id === id);
+      if (!dividendToDelete) return prev;
+
+      const updatedAssets = (prev.assets || []).map(a =>
+        a.id === dividendToDelete.assetId ? { ...a, totalDividends: Math.max(0, (a.totalDividends || 0) - dividendToDelete.totalValue) } : a
+      );
+
+      return {
+        ...prev,
+        dividends: (prev.dividends || []).filter(d => d.id !== id),
+        assets: updatedAssets
+      };
+    });
+    toast.success('Provento removido!');
+  };
+
   const toggleTheme = () => {
     setState(prev => ({ ...prev, theme: 'light' }));
   };
@@ -164,6 +225,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setState({
       transactions: [],
       assets: [],
+      dividends: [],
       budgetGoals: INITIAL_BUDGET_GOALS,
       investmentGoals: INITIAL_INVESTMENT_GOALS,
       theme: 'light'
@@ -177,6 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setState({
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
         assets: Array.isArray(parsed.assets) ? parsed.assets : [],
+        dividends: Array.isArray(parsed.dividends) ? parsed.dividends : [],
         budgetGoals: Array.isArray(parsed.budgetGoals) ? parsed.budgetGoals : INITIAL_BUDGET_GOALS,
         investmentGoals: Array.isArray(parsed.investmentGoals) ? parsed.investmentGoals : INITIAL_INVESTMENT_GOALS,
         theme: 'light'
@@ -192,6 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       transactions: state.transactions || [],
       assets: state.assets || [],
+      dividends: state.dividends || [],
       budgetGoals: state.budgetGoals || INITIAL_BUDGET_GOALS,
       investmentGoals: state.investmentGoals || INITIAL_INVESTMENT_GOALS,
       theme: 'light',
@@ -201,6 +265,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addAsset,
       updateAsset,
       deleteAsset,
+      addDividend,
+      updateDividend,
+      deleteDividend,
       updateBudgetGoals,
       updateInvestmentGoals,
       toggleTheme,

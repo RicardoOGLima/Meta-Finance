@@ -14,6 +14,7 @@ import MetasInvestimento from './pages/MetasInvestimento';
 import Configuracoes from './pages/Configuracoes';
 import Forecast from './pages/Forecast';
 import Login from './pages/Login';
+import Proventos from './pages/Proventos';
 import { Loader2 } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import toast, { Toaster } from 'react-hot-toast';
@@ -50,6 +51,7 @@ const AppContent: React.FC = () => {
       case 'metas-investimento': return <MetasInvestimento />;
       case 'configuracoes': return <Configuracoes />;
       case 'forecast': return <Forecast />;
+      case 'proventos': return <Proventos onPageChange={setCurrentPage} />;
       default: return <Dashboard />;
     }
   };

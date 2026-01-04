@@ -113,7 +113,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
         <div className="space-y-1">
           <button
             onClick={() => onPageChange('investimentos')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${currentPage === 'investimentos' || currentPage === 'novo-ativo' || currentPage === 'metas-investimento'
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${currentPage === 'investimentos' || currentPage === 'novo-ativo' || currentPage === 'metas-investimento' || currentPage === 'proventos' || currentPage === 'novo-aporte'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
               : 'text-slate-500 hover:bg-slate-100'
               }`}
@@ -135,6 +135,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
             >
               <PiggyBank size={16} />
               Novo Aporte
+            </button>
+            <button
+              onClick={() => onPageChange('proventos')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-medium transition-all ${currentPage === 'proventos'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              <TrendingUp size={16} />
+              Proventos
             </button>
             <button
               onClick={() => onPageChange('metas-investimento')}
