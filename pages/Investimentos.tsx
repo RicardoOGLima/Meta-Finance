@@ -13,6 +13,7 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
   const { assets, dividends, investmentGoals, deleteAsset, updateAsset, theme } = useApp();
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [filterClass, setFilterClass] = useState('Todas');
+  const [showSold, setShowSold] = useState(false);
 
   // Calculate dynamic dividends for each asset ticker
   const assetsWithDividends = useMemo(() => {
@@ -44,23 +45,25 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
     }
   };
 
-  // Advanced Sleeping Point Logic
-  const scatterData = filteredMetrics.map(m => {
-    const classMeta = investmentGoals.find(g => g.class === m.class)?.percentage || 0;
-    const weightedQuality = (m.score || 0) * (classMeta / 100);
-    const gapRealVsIdeal = m.currentPercentage - m.idealPercentage;
+  // Advanced Sleeping Point Logic - Filter out sold assets to keep chart clean
+  const scatterData = filteredMetrics
+    .filter(m => m.quantity > 0)
+    .map(m => {
+      const classMeta = investmentGoals.find(g => g.class === m.class)?.percentage || 0;
+      const weightedQuality = (m.score || 0) * (classMeta / 100);
+      const gapRealVsIdeal = m.currentPercentage - m.idealPercentage;
 
-    return {
-      x: parseFloat(weightedQuality.toFixed(2)),
-      y: parseFloat(gapRealVsIdeal.toFixed(2)),
-      z: Math.min(m.currentPercentage * 10, 500), // Bubble size
-      ticker: m.ticker,
-      class: m.class,
-      realWeight: m.currentPercentage,
-      idealWeight: m.idealPercentage,
-      score: m.score || 0
-    };
-  });
+      return {
+        x: parseFloat(weightedQuality.toFixed(2)),
+        y: parseFloat(gapRealVsIdeal.toFixed(2)),
+        z: Math.min(m.currentPercentage * 10, 500), // Bubble size
+        ticker: m.ticker,
+        class: m.class,
+        realWeight: m.currentPercentage,
+        idealWeight: m.idealPercentage,
+        score: m.score || 0
+      };
+    });
 
   const avgX = scatterData.length > 0
     ? scatterData.reduce((acc, d) => acc + d.x, 0) / scatterData.length
@@ -106,6 +109,15 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
         description="Gestão de ativos e rebalanceamento."
         action={
           <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={() => setShowSold(!showSold)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[10px] font-bold transition-all ${showSold
+                ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
+                : 'bg-white border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
+                }`}
+            >
+              {showSold ? 'Ocultar Vendidos' : 'Ver Vendidos'}
+            </button>
             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <Filter size={16} className="text-slate-400" />
               <select
@@ -259,69 +271,74 @@ const Investimentos: React.FC<{ onPageChange: (p: string) => void }> = ({ onPage
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-              {filteredMetrics.length > 0 ? [...filteredMetrics].sort((a, b) => a.class.localeCompare(b.class) || a.ticker.localeCompare(b.ticker)).map((item) => {
-                const a = item as Asset & { idealPercentage: number; gap: number };
-                const valorizacao = a.averagePrice > 0 ? ((a.currentPrice - a.averagePrice) / a.averagePrice) * 100 : 0;
-                const yieldOnCost = (a.averagePrice > 0 && a.quantity > 0) ? (a.totalDividends / (a.quantity * a.averagePrice)) * 100 : 0;
-                const totalReturn = valorizacao + yieldOnCost;
+              {filteredMetrics.filter(m => showSold || m.quantity > 0).length > 0 ? (
+                filteredMetrics
+                  .filter(m => showSold || m.quantity > 0)
+                  .sort((a, b) => a.class.localeCompare(b.class) || a.ticker.localeCompare(b.ticker))
+                  .map((item) => {
+                    const a = item as any as Asset & { idealPercentage: number; gap: number; totalDividends: number };
+                    const valorizacao = a.averagePrice > 0 ? ((a.currentPrice - a.averagePrice) / a.averagePrice) * 100 : 0;
+                    const yieldOnCost = (a.averagePrice > 0 && a.quantity > 0) ? (a.totalDividends / (a.quantity * a.averagePrice)) * 100 : 0;
+                    const totalReturn = valorizacao + yieldOnCost;
 
-                return (
-                  <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">{a.ticker}</span>
-                        <Badge label={a.class} variant="investment" />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-xs text-slate-500">{formatCurrency(a.averagePrice || 0)}</td>
-                    <td className="px-6 py-4 text-right font-mono text-xs font-bold">{formatCurrency(a.currentPrice)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`text-[10px] font-bold ${valorizacao >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {valorizacao >= 0 ? '+' : ''}{valorizacao.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">
-                        {yieldOnCost.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`text-[10px] font-black ${totalReturn >= 0 ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'} px-2 py-1 rounded-lg`}>
-                        {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex flex-col items-center leading-tight">
-                        <span className="font-mono text-xs text-blue-600 font-bold">{a.idealPercentage.toFixed(1)}%</span>
-                        {Math.abs(a.gap) >= 0.1 ? (
-                          <>
-                            <span className={`text-[10px] mt-1 ${a.gap >= 0 ? 'text-green-600' : 'text-amber-500'}`}>
-                              {Math.abs(a.gap).toFixed(1)}%
-                            </span>
-                            <span className={`text-[8px] font-bold uppercase tracking-tighter ${a.gap >= 0 ? 'text-green-600' : 'text-amber-500'}`}>
-                              {a.gap >= 0 ? 'Comprar' : 'Excesso'}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-[8px] font-bold uppercase tracking-tighter text-slate-400 mt-2">
-                            Alvo
+                    return (
+                      <tr key={a.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${a.quantity === 0 ? 'opacity-50 grayscale-[0.5]' : ''}`}>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">{a.ticker}</span>
+                            <Badge label={a.class} variant="investment" />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono text-xs text-slate-500">{formatCurrency(a.averagePrice || 0)}</td>
+                        <td className="px-6 py-4 text-right font-mono text-xs font-bold">{formatCurrency(a.currentPrice)}</td>
+                        <td className="px-6 py-4 text-right">
+                          <span className={`text-[10px] font-bold ${valorizacao >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {valorizacao >= 0 ? '+' : ''}{valorizacao.toFixed(2)}%
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button onClick={() => setEditingAsset(a)} className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
-                          <Edit2 size={16} />
-                        </button>
-                        <button onClick={() => deleteAsset(a.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }) : (
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">
+                            {yieldOnCost.toFixed(2)}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className={`text-[10px] font-black ${totalReturn >= 0 ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'} px-2 py-1 rounded-lg`}>
+                            {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex flex-col items-center leading-tight">
+                            <span className="font-mono text-xs text-blue-600 font-bold">{a.idealPercentage.toFixed(1)}%</span>
+                            {Math.abs(a.gap) >= 0.1 ? (
+                              <>
+                                <span className={`text-[10px] mt-1 ${a.gap >= 0 ? 'text-green-600' : 'text-amber-500'}`}>
+                                  {Math.abs(a.gap).toFixed(1)}%
+                                </span>
+                                <span className={`text-[8px] font-bold uppercase tracking-tighter ${a.gap >= 0 ? 'text-green-600' : 'text-amber-500'}`}>
+                                  {a.gap >= 0 ? 'Comprar' : 'Excesso'}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[8px] font-bold uppercase tracking-tighter text-slate-400 mt-2">
+                                Alvo
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button onClick={() => setEditingAsset(a)} className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+                              <Edit2 size={16} />
+                            </button>
+                            <button onClick={() => deleteAsset(a.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+              ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                     {filterClass === 'Todas' ? 'Nenhum ativo em carteira.' : `Nenhum ativo encontrado na classe "${filterClass}".`}

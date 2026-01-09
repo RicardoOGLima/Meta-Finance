@@ -17,7 +17,7 @@ export const calculateSummary = (transactions: Transaction[], month: number, yea
 
   const income = filtered.filter(t => t.type === 'RECCEITA').reduce((acc, t) => acc + t.value, 0);
   const expense = filtered.filter(t => t.type === 'DESPESA').reduce((acc, t) => acc + t.value, 0);
-  
+
   return { income, expense, balance: income - expense };
 };
 
@@ -32,22 +32,25 @@ export const calculatePortfolioMetrics = (assets: Asset[], investmentGoals: Inve
   const metrics = assets.map(a => {
     const assetValue = a.quantity * a.currentPrice;
     const currentPercentage = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
-    
-    // Calculate relative weight within the class
-    const classAssets = assets.filter(ca => ca.class === a.class);
+
+    // Only calculate weights for active assets (qty > 0)
+    const classAssets = assets.filter(ca => ca.class === a.class && ca.quantity > 0);
     const sumWeights = classAssets.reduce((acc, ca) => acc + Math.max(ca.score || 0, 0.1), 0);
-    const relativeWeight = Math.max(a.score || 0, 0.1) / sumWeights;
-    
-    // Ideal % = Class Goal % * Asset relative weight
-    const classGoal = goalsMap.get(a.class) || 0;
-    const idealPercentage = classGoal * relativeWeight;
+
+    let idealPercentage = 0;
+    if (a.quantity > 0 && sumWeights > 0) {
+      const relativeWeight = Math.max(a.score || 0, 0.1) / sumWeights;
+      const classGoal = goalsMap.get(a.class) || 0;
+      idealPercentage = classGoal * relativeWeight;
+    }
+
     const gap = idealPercentage - currentPercentage;
-    
+
     return {
       ...a,
       totalValue: assetValue,
       currentPercentage,
-      idealPercentage, 
+      idealPercentage,
       gap
     };
   });
@@ -57,13 +60,13 @@ export const calculatePortfolioMetrics = (assets: Asset[], investmentGoals: Inve
     const classAssets = assets.filter(a => a.class === goal.class);
     const value = classAssets.reduce((acc, a) => acc + (a.quantity * a.currentPrice), 0);
     const currentPercentage = totalValue > 0 ? (value / totalValue) * 100 : 0;
-    
-    return { 
-      name: goal.class, 
+
+    return {
+      name: goal.class,
       value: currentPercentage,
-      meta: goal.percentage 
+      meta: goal.percentage
     };
-  }).sort((a, b) => b.meta - a.meta); // Sort by priority (highest meta first)
+  }).sort((a, b) => b.meta - a.meta);
 
   return { totalValue, metrics, classAllocation };
 };
@@ -80,21 +83,15 @@ export interface ContributionSuggestion {
   isNewClass?: boolean;
 }
 
-/**
- * Rebalancing Algorithm:
- * 1. Define ideal % for EVERY asset and EMPTY CLASSES.
- * 2. Calculate current portfolio value and value post-aporte.
- * 3. Calculate Gap in BRL for each.
- * 4. Greedy distribution starting from the largest deficit.
- */
 export const planContribution = (
-  assets: Asset[], 
-  investmentGoals: InvestmentGoal[], 
+  assets: Asset[],
+  investmentGoals: InvestmentGoal[],
   amount: number
 ): ContributionSuggestion[] => {
   if (amount <= 0) return [];
 
-  const totalValueCurrent = assets.reduce((acc, a) => acc + (a.quantity * a.currentPrice), 0);
+  const activeAssets = assets.filter(a => a.quantity > 0);
+  const totalValueCurrent = activeAssets.reduce((acc, a) => acc + (a.quantity * a.currentPrice), 0);
   const totalValuePost = totalValueCurrent + amount;
   const goalsMap = new Map(investmentGoals.map(g => [g.class, g.percentage]));
 
@@ -108,13 +105,13 @@ export const planContribution = (
     price: number;
   }[] = [];
 
-  // 1. Identify active assets and their ideal percentages
-  assets.forEach(a => {
-    const classAssets = assets.filter(ca => ca.class === a.class);
+  // 1. Identify active assets (qty > 0) and their ideal percentages
+  activeAssets.forEach(a => {
+    const classAssets = activeAssets.filter(ca => ca.class === a.class);
     const sumWeights = classAssets.reduce((acc, ca) => acc + Math.max(ca.score || 0, 0.1), 0);
     const relativeWeight = Math.max(a.score || 0, 0.1) / sumWeights;
     const classMeta = goalsMap.get(a.class) || 0;
-    
+
     candidateItems.push({
       id: a.id,
       ticker: a.ticker,
@@ -126,10 +123,10 @@ export const planContribution = (
     });
   });
 
-  // 2. Identify classes with goals but NO assets
-  const classesWithAssets = new Set(assets.map(a => a.class));
+  // 2. Identify classes with goals but NO active assets
+  const classesWithActiveAssets = new Set(activeAssets.map(a => a.class));
   investmentGoals.forEach(goal => {
-    if (goal.percentage > 0 && !classesWithAssets.has(goal.class)) {
+    if (goal.percentage > 0 && !classesWithActiveAssets.has(goal.class)) {
       candidateItems.push({
         id: `new-class-${goal.class}`,
         ticker: `Nova Compra`,
@@ -137,7 +134,7 @@ export const planContribution = (
         currentValue: 0,
         idealPercentage: goal.percentage,
         isNewClass: true,
-        price: 1 // Dummy price for logic
+        price: 1
       });
     }
   });
@@ -151,14 +148,14 @@ export const planContribution = (
       id: item.id,
       ticker: item.ticker,
       class: item.class,
-      suggestedValue: gapBrl, // Temporary: holding the gap
+      suggestedValue: gapBrl,
       suggestedQty: 0,
       currentPercentage: totalValueCurrent > 0 ? (item.currentValue / totalValueCurrent) * 100 : 0,
       afterPercentage: 0,
       idealPercentage: item.idealPercentage,
       isNewClass: item.isNewClass
     };
-  }).sort((a, b) => b.suggestedValue - a.suggestedValue); // Sort by largest gap BRL
+  }).sort((a, b) => b.suggestedValue - a.suggestedValue);
 
   // 4. Allocate amount greedily
   let remainingAporte = amount;
@@ -166,7 +163,7 @@ export const planContribution = (
 
   for (const s of suggestions) {
     if (remainingAporte <= 0) break;
-    
+
     const allocation = Math.min(s.suggestedValue, remainingAporte);
     if (allocation > 0.01) {
       remainingAporte -= allocation;
