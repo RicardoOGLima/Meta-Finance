@@ -88,6 +88,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
     const idPrefix = Math.random().toString(36).substr(2, 9);
     const newTransactions: Transaction[] = [];
+    const createdAt = new Date().toISOString();
 
     if (t.installments > 1) {
       const groupId = idPrefix;
@@ -95,16 +96,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       for (let i = 1; i <= t.installments; i++) {
         const installmentDate = new Date(baseDate);
         installmentDate.setMonth(baseDate.getMonth() + (i - 1));
+
+        // 1st installment keeps original day, 
+        // subsequent installments always fall on the 1st of the month
+        if (i > 1) {
+          installmentDate.setDate(1);
+        }
+
         newTransactions.push({
           ...t,
           id: `${groupId}-${i}`,
           groupId,
           currentInstallment: i,
-          date: installmentDate.toISOString()
+          date: installmentDate.toISOString(),
+          createdAt
         });
       }
     } else {
-      newTransactions.push({ ...t, id: idPrefix });
+      newTransactions.push({ ...t, id: idPrefix, createdAt });
     }
 
     setState(prev => ({

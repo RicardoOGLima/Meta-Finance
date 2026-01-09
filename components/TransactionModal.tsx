@@ -83,6 +83,14 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ type, isOpen, onClo
     for (let i = 1; i <= formData.installments; i++) {
       const d = new Date(baseDate);
       d.setMonth(baseDate.getMonth() + (i - 1));
+
+      // Mirror the logic from AppContext.tsx:
+      // 1st installment keeps original day, 
+      // subsequent installments fall on the 1st
+      if (i > 1) {
+        d.setDate(1);
+      }
+
       installments.push({
         num: i,
         date: d.toLocaleDateString('pt-BR'),

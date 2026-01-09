@@ -34,6 +34,7 @@ export interface Transaction {
   currentInstallment?: number;
   value: number;
   groupId?: string; // Links installments together
+  createdAt?: string; // ISO format for creation time
 }
 
 export interface BudgetGoal {

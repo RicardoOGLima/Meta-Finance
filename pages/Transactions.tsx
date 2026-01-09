@@ -19,14 +19,41 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
+  const [selectedMonth, setSelectedMonth] = useState(''); // Format: YYYY-MM
+  const [valueFilter, setValueFilter] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'createdAt'>('date');
 
   const filtered = transactions
     .filter(t => t.type === type)
     .filter(t => t.description.toLowerCase().includes(searchTerm.toLowerCase()))
     .filter(t => selectedCategory === 'Todas' || t.category === selectedCategory)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .filter(t => selectedSubcategory === 'Todas' || t.subcategory === selectedSubcategory)
+    .filter(t => {
+      if (!selectedMonth) return true;
+      const [y, m] = selectedMonth.split('-');
+      const d = new Date(t.date);
+      return d.getFullYear() === parseInt(y) && d.getMonth() === (parseInt(m) - 1);
+    })
+    .filter(t => {
+      if (!valueFilter.trim()) return true;
+      const targetValue = parseFloat(valueFilter.replace(',', '.'));
+      if (isNaN(targetValue)) return true;
+      const min = targetValue * 0.95;
+      const max = targetValue * 1.05;
+      return t.value >= min && t.value <= max;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'createdAt') {
+        const timeA = new Date(a.createdAt || a.date).getTime();
+        const timeB = new Date(b.createdAt || b.date).getTime();
+        return timeB - timeA;
+      }
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
 
-  const categories = ['Todas', ...Array.from(new Set(transactions.map(t => t.category)))];
+  const categories = ['Todas', ...Array.from(new Set(transactions.filter(t => t.type === type).map(t => t.category)))];
+  const subcategories = ['Todas', ...Array.from(new Set(transactions.filter(t => t.type === type && (selectedCategory === 'Todas' || t.category === selectedCategory)).map(t => t.subcategory)))];
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
@@ -34,15 +61,25 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
         title={type === 'RECCEITA' ? 'Receitas' : 'Despesas'}
         description="Gerencie seus fluxos financeiros."
         action={
-          <button
-            onClick={() => {
-              setEditingTransaction(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
-          >
-            <Plus size={20} /> Nova {type === 'RECCEITA' ? 'Receita' : 'Despesa'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              className="px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-blue-600 text-sm font-bold shadow-sm text-slate-600 dark:text-slate-300"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as any)}
+            >
+              <option value="date">📅 Ordenar: Data</option>
+              <option value="createdAt">🆕 Ordenar: Recentes</option>
+            </select>
+            <button
+              onClick={() => {
+                setEditingTransaction(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all whitespace-nowrap"
+            >
+              <Plus size={20} /> {type === 'RECCEITA' ? 'Receita' : 'Despesa'}
+            </button>
+          </div>
         }
       />
 
@@ -58,14 +95,42 @@ const Transactions: React.FC<TransactionsPageProps> = ({ type }) => {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full md:w-auto">
             <select
-              className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-blue-600"
+              className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-blue-600 text-sm"
               value={selectedCategory}
-              onChange={e => setSelectedCategory(e.target.value)}
+              onChange={e => {
+                setSelectedCategory(e.target.value);
+                setSelectedSubcategory('Todas'); // Reset subcategory when category changes
+              }}
             >
+              <option disabled value="">Categoria</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+
+            <select
+              className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-blue-600 text-sm"
+              value={selectedSubcategory}
+              onChange={e => setSelectedSubcategory(e.target.value)}
+            >
+              <option disabled value="">Subcategoria</option>
+              {subcategories.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+
+            <input
+              type="month"
+              className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+            />
+
+            <input
+              type="text"
+              placeholder="Valor (±5%)"
+              className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+              value={valueFilter}
+              onChange={e => setValueFilter(e.target.value)}
+            />
           </div>
         </div>
 
