@@ -77,5 +77,4 @@ export interface AppState {
   budgetGoals: BudgetGoal[];
   investmentGoals: InvestmentGoal[];
   subcategories: string[];
-  theme: 'light' | 'dark';
 }

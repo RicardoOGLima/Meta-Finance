@@ -18,7 +18,6 @@ interface AppContextType extends AppState {
   updateBudgetGoals: (goals: BudgetGoal[]) => void;
   updateInvestmentGoals: (goals: InvestmentGoal[]) => void;
   updateSubcategories: (subs: string[]) => void;
-  toggleTheme: () => void;
   resetData: () => void;
   importData: (json: string) => void;
   isDataLoading: boolean;
@@ -34,8 +33,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dividends: [],
     budgetGoals: INITIAL_BUDGET_GOALS,
     investmentGoals: INITIAL_INVESTMENT_GOALS,
-    subcategories: EXPENSE_SUBCATEGORIES,
-    theme: 'light'
+    subcategories: EXPENSE_SUBCATEGORIES
   });
 
   const hasLoaded = useRef(false);
@@ -59,8 +57,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             dividends: Array.isArray(saved.dividends) ? saved.dividends : [],
             budgetGoals: Array.isArray(saved.budgetGoals) ? saved.budgetGoals : INITIAL_BUDGET_GOALS,
             investmentGoals: Array.isArray(saved.investmentGoals) ? saved.investmentGoals : INITIAL_INVESTMENT_GOALS,
-            subcategories: Array.isArray(saved.subcategories) ? saved.subcategories : EXPENSE_SUBCATEGORIES,
-            theme: 'light'
+            subcategories: Array.isArray(saved.subcategories) ? saved.subcategories : EXPENSE_SUBCATEGORIES
           });
         } else {
           console.log("[AppContext] No saved data found, using defaults.");
@@ -203,9 +200,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success('Provento removido!');
   };
 
-  const toggleTheme = () => {
-    setState(prev => ({ ...prev, theme: 'light' }));
-  };
 
   const resetData = () => {
     setState({
@@ -214,8 +208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dividends: [],
       budgetGoals: INITIAL_BUDGET_GOALS,
       investmentGoals: INITIAL_INVESTMENT_GOALS,
-      subcategories: EXPENSE_SUBCATEGORIES,
-      theme: 'light'
+      subcategories: EXPENSE_SUBCATEGORIES
     });
     toast.success('Dados resetados!');
   };
@@ -229,8 +222,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dividends: Array.isArray(parsed.dividends) ? parsed.dividends : [],
         budgetGoals: Array.isArray(parsed.budgetGoals) ? parsed.budgetGoals : INITIAL_BUDGET_GOALS,
         investmentGoals: Array.isArray(parsed.investmentGoals) ? parsed.investmentGoals : INITIAL_INVESTMENT_GOALS,
-        subcategories: Array.isArray(parsed.subcategories) ? parsed.subcategories : EXPENSE_SUBCATEGORIES,
-        theme: 'light'
+        subcategories: Array.isArray(parsed.subcategories) ? parsed.subcategories : EXPENSE_SUBCATEGORIES
       });
       toast.success('Dados importados com sucesso!');
     } catch (e) {
@@ -260,7 +252,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateBudgetGoals,
       updateInvestmentGoals,
       updateSubcategories,
-      toggleTheme,
       resetData,
       importData,
       isDataLoading
