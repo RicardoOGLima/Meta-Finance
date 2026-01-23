@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { planContribution, formatCurrency } from '../utils/calculations';
-import { Calculator, TrendingUp, Info } from 'lucide-react';
+import { planContribution, formatCurrency, calculateAdherenceScore, calculatePortfolioDeficit } from '../utils/calculations';
+import { Calculator, TrendingUp, Info, PieChart as PieIcon, Activity, Target } from 'lucide-react';
 import { Badge } from '../components/ui';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+// Modern, vibrant colors for the chart
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
 
 const NovoAporte: React.FC = () => {
   const { assets, investmentGoals } = useApp();
@@ -13,6 +17,18 @@ const NovoAporte: React.FC = () => {
     const results = planContribution(assets, investmentGoals, amount);
     setSuggestions(results);
   };
+
+  const adherenceScore = useMemo(() => calculateAdherenceScore(assets, investmentGoals), [assets, investmentGoals]);
+  const equilibriumDeficit = useMemo(() => calculatePortfolioDeficit(assets, investmentGoals), [assets, investmentGoals]);
+
+  // Aggregate suggestions for the chart
+  const chartData = useMemo(() => {
+    const agg: Record<string, number> = {};
+    suggestions.filter(s => s.suggestedValue > 0).forEach(s => {
+      agg[s.class] = (agg[s.class] || 0) + s.suggestedValue;
+    });
+    return Object.entries(agg).map(([name, value]) => ({ name, value }));
+  }, [suggestions]);
 
   return (
     <div className="space-y-8 animate-in zoom-in-95 duration-500">
@@ -41,6 +57,79 @@ const NovoAporte: React.FC = () => {
             >
               <Calculator size={20} /> Calcular Estratégia
             </button>
+          </div>
+
+          {/* New Metrics Section */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
+
+            {/* Adherence Meter */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h5 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase text-[10px] tracking-widest">
+                    <Activity size={14} /> Aderência à Meta
+                  </h5>
+                  <span className={`text-sm font-black ${adherenceScore >= 80 ? 'text-emerald-500' : adherenceScore >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                    {adherenceScore}%
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${adherenceScore >= 80 ? 'bg-emerald-500' : adherenceScore >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                    style={{ width: `${adherenceScore}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Equilibrium Deficit */}
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                  <Target size={16} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Para o Equilíbrio</p>
+                  <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+                    {equilibriumDeficit > 0 ? `+ ${formatCurrency(equilibriumDeficit)}` : 'Em Equilíbrio'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Allocation Chart (Only shows if suggestions exist) */}
+            {chartData.length > 0 && (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <h5 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase text-[10px] tracking-widest">
+                  <PieIcon size={14} /> Distribuição do Aporte
+                </h5>
+                <div className="h-56 w-full -ml-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={65}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-500/10 p-6 rounded-3xl border border-blue-100 dark:border-blue-800 transition-colors">
