@@ -37,6 +37,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const hasLoaded = useRef(false);
+  const lastSavedJson = useRef<string>('');
 
   // Initial load
   useEffect(() => {
@@ -51,14 +52,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             hasBudgetGoals: !!saved.budgetGoals,
             hasInvestmentGoals: !!saved.investmentGoals
           });
-          setState({
+
+          const newState = {
             transactions: Array.isArray(saved.transactions) ? saved.transactions : [],
             assets: Array.isArray(saved.assets) ? saved.assets : [],
             dividends: Array.isArray(saved.dividends) ? saved.dividends : [],
             budgetGoals: Array.isArray(saved.budgetGoals) ? saved.budgetGoals : INITIAL_BUDGET_GOALS,
             investmentGoals: Array.isArray(saved.investmentGoals) ? saved.investmentGoals : INITIAL_INVESTMENT_GOALS,
             subcategories: Array.isArray(saved.subcategories) ? saved.subcategories : EXPENSE_SUBCATEGORIES
-          });
+          };
+
+          // Set baseline for change detection
+          lastSavedJson.current = JSON.stringify(newState);
+          setState(newState);
         } else {
           console.log("[AppContext] No saved data found, using defaults.");
         }
@@ -76,9 +82,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // Sync state to storage
+  // Sync state to storage
   useEffect(() => {
     if (hasLoaded.current) {
-      storage.save(state);
+      const currentJson = JSON.stringify(state);
+
+      // Only save if data has ACTUALLY changed
+      if (currentJson !== lastSavedJson.current) {
+        console.log('[AppContext] Change detected, saving...');
+        storage.save(state);
+        lastSavedJson.current = currentJson;
+      } else {
+        // console.log('[AppContext] No change detected, skipping save.');
+      }
     }
   }, [state]);
 

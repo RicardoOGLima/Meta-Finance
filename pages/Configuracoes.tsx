@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Download, Upload, Trash2, ShieldAlert, Info, FolderSync, Monitor, CheckCircle, Tag, Pencil } from 'lucide-react';
+import { Download, Upload, Trash2, ShieldAlert, Info, FolderSync, Monitor, CheckCircle, Tag, Pencil, Calendar, RefreshCw } from 'lucide-react';
 import { PageHeader, Card } from '../components/ui';
 import { storage } from '../utils/storage';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -12,12 +12,37 @@ const Configuracoes: React.FC = () => {
   const [desktopPath, setDesktopPath] = useState<string>('');
   const [newSubName, setNewSubName] = useState('');
   const [editingSub, setEditingSub] = useState<{ index: number, name: string } | null>(null);
+  const [backups, setBackups] = useState<{ name: string, date: Date, size: number }[]>([]);
 
   useEffect(() => {
     if (storage.isDesktop()) {
       storage.getConfiguredPath().then(setDesktopPath);
+      loadBackups();
     }
   }, []);
+
+  const loadBackups = async () => {
+    try {
+      const list = await storage.listBackups();
+      setBackups(list);
+    } catch (e) {
+      console.error('Failed to load backups', e);
+    }
+  };
+
+  const handleRestoreBackup = async (filename: string) => {
+    if (!window.confirm('ATENÇÃO: Restaurar este backup substituirá todos os dados atuais.\n\nO sistema fará um arquivo de segurança do estado atual antes de prosseguir.\n\nDeseja continuar?')) return;
+
+    const toastId = toast.loading('Restaurando backup...');
+    try {
+      await storage.restoreBackup(filename);
+      toast.success('Backup restaurado! O aplicativo será recarregado.', { id: toastId });
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao restaurar backup.', { id: toastId });
+    }
+  };
 
   const handleSelectFolder = async () => {
     try {
@@ -141,6 +166,52 @@ const Configuracoes: React.FC = () => {
               </label>
             </div>
           </Card>
+
+          {storage.isDesktop() && (
+            <Card
+              padding="large"
+              title="Histórico de Backups"
+              headerAction={<Calendar size={20} className="text-purple-600" />}
+              subtitle="Pontos de restauração automáticos (Ontem, Semana passada)."
+            >
+              <div className="space-y-3">
+                {backups.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-sm">
+                    <Calendar size={32} className="mx-auto mb-2 opacity-20" />
+                    Nenhum backup encontrado ainda.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {backups.map((backup) => (
+                      <div key={backup.name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 group hover:border-purple-200 dark:hover:border-purple-900 transition-colors">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                            {new Date(backup.date).toLocaleString()}
+                            {Date.now() - new Date(backup.date).getTime() < 86400000 && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md">Novo</span>}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {(backup.size / 1024).toFixed(1)} KB • {backup.name}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleRestoreBackup(backup.name)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 rounded-lg transition-all opacity-80 hover:opacity-100"
+                        >
+                          <RefreshCw size={14} /> Restaurar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-3 border-t dark:border-slate-700 text-center">
+                  <p className="text-[10px] text-slate-400">
+                    O sistema mantém automaticamente o backup mais recente, um de ontem e um da semana passada.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
 
           <Card
             padding="large"
