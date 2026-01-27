@@ -42,9 +42,9 @@ const useTophAIAutomation = () => {
 
         // 1. Check for Monthly Report (until 5th day of the month)
         if (now.getDate() <= 5) {
-          const monthKey = now.toISOString().slice(0, 7);
+          const monthKey = now.getFullYear() + '_' + String(now.getMonth() + 1).padStart(2, '0');
           const insights = await storage.listInsights();
-          const hasMonthly = insights.some(i => i.name.includes(`Relatorio_Mensal_${monthKey}`));
+          const hasMonthly = insights.some(i => i.name.includes(`${monthKey} - Análise Mensal.html`));
           if (!hasMonthly) {
             shouldGenerate = true;
             type = 'monthly';
@@ -64,7 +64,29 @@ const useTophAIAutomation = () => {
             transactions, assets, dividends, budgetGoals, investmentGoals, subcategories
           };
 
-          const report = TophAI.generateReport(stateValues, type);
+          // Base64 Images for the report
+          const assetsDir = await storage.getAssetsDir();
+
+          const getB64Data = async (fileName: string) => {
+            const b64 = await storage.readFileAsBase64(`${assetsDir}/${fileName}`);
+            return (b64 && b64.length > 30) ? `data:image/png;base64,${b64}` : undefined;
+          };
+
+          const logoB64 = await getB64Data('logo.png');
+          const personalLogoB64 = await getB64Data('personal_logo.png');
+
+          if (!logoB64 || !personalLogoB64) {
+            console.warn('Toph AI: Branding assets missing in assets/ folder');
+          }
+
+          const badgesB64Data = {
+            diamond_hands: await getB64Data('diamond_hands.png'),
+            frugal_master: await getB64Data('frugal_master.png'),
+            dividend_rain: await getB64Data('dividend_rain.png'),
+          };
+
+          const report = TophAI.generateReport(stateValues, type, logoB64, badgesB64Data, personalLogoB64);
+
           await storage.saveInsight(report.name, report.content);
 
           toast.success(`Toph AI: Novo relatório ${type === 'weekly' ? 'semanal' : 'mensal'} gerado!`, {

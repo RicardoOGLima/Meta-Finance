@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { FileText, Brain, Sparkles, Clock, ChevronRight, Search, FileSignature } from 'lucide-react';
-import { PageHeader, Card, Badge } from '../components/ui';
+import { FileText, Brain, Sparkles, Clock, ChevronRight, Search, FileSignature, Download, Plus } from 'lucide-react';
+import { PageHeader, Card } from '../components/ui';
 import { storage } from '../utils/storage';
 import { TophAI } from '../utils/analyst';
 import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
+import html2pdf from 'html2pdf.js';
+
+interface InsightItem {
+    name: string;
+    path: string;
+}
+
+interface SelectedInsight {
+    name: string;
+    content: string;
+}
 
 const Insights: React.FC = () => {
     const { transactions, assets, dividends, budgetGoals, investmentGoals, subcategories } = useApp();
-    const [insights, setInsights] = useState<{ name: string, path: string }[]>([]);
+    const [insights, setInsights] = useState<InsightItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedInsight, setSelectedInsight] = useState<string | null>(null);
-    const [content, setContent] = useState<string>('');
+    const [selectedInsight, setSelectedInsight] = useState<SelectedInsight | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -23,7 +33,6 @@ const Insights: React.FC = () => {
     const loadInsights = async () => {
         setLoading(true);
         const list = await storage.listInsights();
-        // Sort by name (assuming dates in name like Analise_YYYY_MM_DD.md)
         const sortedList = list.sort((a, b) => b.name.localeCompare(a.name));
         setInsights(sortedList);
 
@@ -33,25 +42,74 @@ const Insights: React.FC = () => {
         setLoading(false);
     };
 
-    const handleManualGenerate = async () => {
-        const stateValues = {
-            transactions, assets, dividends, budgetGoals, investmentGoals, subcategories
+    const handleManualGenerate = async (type: 'weekly' | 'monthly') => {
+        try {
+            const stateValues = {
+                transactions, assets, dividends, budgetGoals, investmentGoals, subcategories
+            };
+            // Base64 Images for the report
+            const assetsDir = await storage.getAssetsDir();
+
+            const getB64Data = async (fileName: string) => {
+                const b64 = await storage.readFileAsBase64(`${assetsDir}/${fileName}`);
+                return (b64 && b64.length > 30) ? `data:image/png;base64,${b64}` : undefined;
+            };
+
+            const logoB64 = await getB64Data('logo.png');
+            const personalLogoB64 = await getB64Data('personal_logo.png');
+
+            console.log(`[Toph AI] Buscando assets em: ${assetsDir}`);
+            if (!logoB64 || !personalLogoB64) {
+                toast.error(`Aviso: Logos não encontrados. Caminho: ${assetsDir}`);
+            }
+
+            const badgesB64Data = {
+                diamond_hands: await getB64Data('diamond_hands.png'),
+                frugal_master: await getB64Data('frugal_master.png'),
+                dividend_rain: await getB64Data('dividend_rain.png'),
+            };
+
+            const report = TophAI.generateReport(stateValues, type, logoB64, badgesB64Data, personalLogoB64);
+
+            await storage.saveInsight(report.name, report.content);
+            toast.success(`Toph AI: Relatório ${type === 'weekly' ? 'semanal' : 'mensal'} gerado com sucesso!`);
+            loadInsights();
+        } catch (err) {
+            console.error('Error generating report:', err);
+            toast.error('Erro ao gerar relatório.');
+        }
+    };
+
+    const handleExportPDF = () => {
+        if (!selectedInsight) return;
+
+        const element = document.getElementById('toph-report');
+        if (!element) {
+            toast.error('Conteúdo do relatório não encontrado para exportação.');
+            return;
+        }
+
+        const opt = {
+            margin: [10, 10, 10, 10] as [number, number, number, number],
+            filename: selectedInsight.name.replace('.html', '.pdf'),
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
         };
 
-        const report = TophAI.generateReport(stateValues, 'weekly');
-        await storage.saveInsight(report.name, report.content);
-        toast.success("Toph AI: Novo relatório gerado sob demanda!");
-        loadInsights();
+        html2pdf().set(opt).from(element).save();
+        toast.success('PDF gerado com sucesso!');
     };
 
     const handleSelectInsight = async (name: string) => {
-        setSelectedInsight(name);
-        setContent(''); // Clear previous
         const text = await storage.readInsight(name);
         if (!text) {
-            setContent('### ⚠️ Erro ao carregar arquivo\n\nNão foi possível ler o conteúdo do arquivo ou ele está vazio. Verifique se as permissões de acesso estão corretas ou tente reiniciar o aplicativo.');
+            setSelectedInsight({
+                name: name,
+                content: '### ⚠️ Erro ao carregar arquivo\n\nNão foi possível ler o conteúdo do arquivo ou ele está vazio.'
+            });
         } else {
-            setContent(text);
+            setSelectedInsight({ name, content: text });
         }
     };
 
@@ -61,10 +119,7 @@ const Insights: React.FC = () => {
 
     const getPrioritizedInsights = () => {
         if (searchTerm) {
-            return {
-                priority: [],
-                history: filteredInsights
-            };
+            return { priority: [], history: filteredInsights };
         }
 
         const weekly = filteredInsights.filter(i => i.name.toLowerCase().includes('semanal')).sort((a, b) => b.name.localeCompare(a.name));
@@ -82,6 +137,10 @@ const Insights: React.FC = () => {
         };
     };
 
+    const getDisplayName = (fileName: string) => {
+        return fileName.replace('.md', '').replace('.html', '').replace(/_/g, ' ');
+    };
+
     const { priority, history } = getPrioritizedInsights();
 
     return (
@@ -90,18 +149,26 @@ const Insights: React.FC = () => {
                 title="Toph AI"
                 description="Relatórios estratégicos e análises analíticas geradas localmente."
                 action={
-                    <button
-                        onClick={handleManualGenerate}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-2xl border border-blue-500 shadow-lg shadow-blue-500/20 transition-all font-bold text-sm"
-                    >
-                        <Sparkles size={18} />
-                        Gerar Agora
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleManualGenerate('weekly')}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-2xl border border-blue-500 shadow-lg shadow-blue-500/20 transition-all font-bold text-sm"
+                        >
+                            <Sparkles size={18} />
+                            Gerar Semanal
+                        </button>
+                        <button
+                            onClick={() => handleManualGenerate('monthly')}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-2xl border border-indigo-500 shadow-lg shadow-indigo-500/20 transition-all font-bold text-sm"
+                        >
+                            <Plus size={18} />
+                            Gerar Mensal
+                        </button>
+                    </div>
                 }
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                {/* Sidebar de Documentos */}
                 <div className="lg:col-span-1 space-y-4">
                     <Card title="Documentos" padding="none">
                         <div className="p-4 border-b dark:border-slate-700">
@@ -137,8 +204,9 @@ const Insights: React.FC = () => {
                                         <InsightButton
                                             key={insight.name}
                                             insight={insight}
-                                            selected={selectedInsight === insight.name}
+                                            selected={selectedInsight?.name === insight.name}
                                             onClick={() => handleSelectInsight(insight.name)}
+                                            displayName={getDisplayName(insight.name)}
                                         />
                                     ))}
 
@@ -149,8 +217,9 @@ const Insights: React.FC = () => {
                                         <InsightButton
                                             key={insight.name}
                                             insight={insight}
-                                            selected={selectedInsight === insight.name}
+                                            selected={selectedInsight?.name === insight.name}
                                             onClick={() => handleSelectInsight(insight.name)}
+                                            displayName={getDisplayName(insight.name)}
                                         />
                                     ))}
                                 </>
@@ -169,28 +238,49 @@ const Insights: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Conteúdo do Markdown */}
                 <div className="lg:col-span-3">
                     {selectedInsight ? (
-                        <Card padding="large">
-                            <div className="prose prose-slate dark:prose-invert max-w-none 
-                prose-headings:font-black prose-headings:tracking-tight
-                prose-h1:text-3xl prose-h1:mb-8 prose-h1:text-blue-600 dark:prose-h1:text-blue-400
-                prose-h2:text-xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:border-b dark:prose-h2:border-slate-800
-                prose-h3:text-2xl prose-h3:mb-4 prose-h3:text-slate-900 dark:prose-h3:text-white
-                prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-p:leading-relaxed
-                prose-em:text-[11px] prose-em:text-slate-400 dark:prose-em:text-slate-500 prose-em:not-italic
-                prose-strong:text-slate-900 dark:prose-strong:text-white
-                prose-table:border prose-table:rounded-xl prose-table:overflow-hidden 
-                prose-th:bg-slate-50 dark:prose-th:bg-slate-900/50 prose-th:p-4
-                prose-td:p-4 prose-td:border-t dark:prose-td:border-slate-800
-                prose-li:text-slate-600 dark:prose-li:text-slate-400
-              ">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {content}
-                                </ReactMarkdown>
+                        <div className="max-w-4xl mx-auto space-y-6">
+                            <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <FileText className="text-blue-500" size={24} />
+                                    <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate max-w-md">
+                                        {getDisplayName(selectedInsight.name)}
+                                    </h2>
+                                </div>
+                                {selectedInsight.name.endsWith('.html') && (
+                                    <button
+                                        onClick={handleExportPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                                    >
+                                        <Download size={18} />
+                                        <span>Exportar PDF</span>
+                                    </button>
+                                )}
                             </div>
-                        </Card>
+
+                            <div className="pb-20">
+                                {selectedInsight.name.endsWith('.html') ? (
+                                    <div
+                                        id="toph-report"
+                                        className="toph-html-container bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                                        dangerouslySetInnerHTML={{ __html: selectedInsight.content }}
+                                    />
+                                ) : (
+                                    <div id="toph-report" className="prose prose-slate dark:prose-invert max-w-none bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm
+                                        prose-h3:text-2xl prose-h3:font-black prose-h3:text-slate-900 dark:prose-h3:text-white prose-h3:mb-6
+                                        prose-em:text-xs prose-em:text-slate-400 prose-em:font-medium prose-em:not-italic
+                                        prose-p:text-slate-600 dark:prose-p:text-slate-400
+                                        prose-li:text-slate-600 dark:prose-li:text-slate-400
+                                        prose-hr:border-slate-100 dark:prose-hr:border-slate-800
+                                        prose-table:text-sm prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:text-slate-400">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {selectedInsight.content}
+                                        </ReactMarkdown>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     ) : (
                         <div className="h-[600px] flex flex-col items-center justify-center text-slate-400 space-y-4 bg-slate-50 dark:bg-slate-950/30 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
                             <Brain size={48} className="opacity-10" />
@@ -206,8 +296,9 @@ const Insights: React.FC = () => {
 const InsightButton: React.FC<{
     insight: { name: string },
     selected: boolean,
-    onClick: () => void
-}> = ({ insight, selected, onClick }) => {
+    onClick: () => void,
+    displayName: string
+}> = ({ insight, selected, onClick, displayName }) => {
     const isMonthly = insight.name.includes('Mensal');
     const isWeekly = insight.name.includes('Semanal');
 
@@ -223,7 +314,7 @@ const InsightButton: React.FC<{
                 {isMonthly ? <FileSignature size={16} /> : <Brain size={16} />}
             </div>
             <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-bold truncate">{insight.name.replace('.md', '')}</p>
+                <p className="text-sm font-bold truncate">{displayName}</p>
                 <div className="flex items-center gap-2">
                     <span className={`text-[9px] font-black uppercase tracking-tighter px-1 rounded ${selected
                         ? 'bg-white/20 text-white'

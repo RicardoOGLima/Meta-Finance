@@ -1,4 +1,4 @@
-import { writeTextFile, readTextFile, exists, mkdir, rename, remove, readDir, stat, copyFile } from '@tauri-apps/plugin-fs';
+import { writeTextFile, readTextFile, exists, mkdir, rename, remove, readDir, stat, copyFile, readFile } from '@tauri-apps/plugin-fs';
 import { documentDir, join, dirname } from '@tauri-apps/api/path';
 
 // Check if we are running in a Tauri (Desktop) environment
@@ -22,16 +22,23 @@ const parseBackupDate = (filename: string): Date | null => {
 };
 
 /**
+ * Gets the local base directory for application data in Documents.
+ */
+async function getLocalBaseDir(): Promise<string> {
+    const docDir = await documentDir();
+    return await join(docDir, 'Meta Finance App');
+}
+
+/**
  * Gets the target file path for desktop storage.
- * If the user hasn't configured a path, it defaults to Documents/MetaFinance/data.json
+ * If the user hasn't configured a path, it defaults to Documents/Meta Finance App/data.json
  */
 async function getDesktopFilePath(): Promise<string> {
     try {
         let configuredPath = localStorage.getItem(CONFIG_PATH_KEY);
 
         if (!configuredPath) {
-            const docDir = await documentDir();
-            const defaultFolder = await join(docDir, 'MetaFinance');
+            const defaultFolder = await getLocalBaseDir();
 
             // Create folder if it doesn't exist
             if (!(await exists(defaultFolder))) {
@@ -165,7 +172,7 @@ export const storage = {
 
             const entries = await readDir(insightsDir);
             return entries
-                .filter(e => e.isFile && e.name.endsWith('.md'))
+                .filter(e => e.isFile && (e.name.endsWith('.md') || e.name.endsWith('.html')))
                 .map(e => ({
                     name: e.name,
                     path: `${insightsDir}/${e.name}` // Note: simplified for display
@@ -231,7 +238,6 @@ export const storage = {
 
             const now = new Date();
 
-            // THROTTLE: If we have a backup from less than 1 hour ago, skip
             // THROTTLE: If we have a backup from less than 1 hour ago, skip
             if (backupFiles.length > 0) {
                 const latest = backupFiles[0];
@@ -426,6 +432,40 @@ export const storage = {
      */
     async getConfiguredPath(): Promise<string> {
         return await getDesktopFilePath();
+    },
+
+    /**
+     * Gets the directory where visuals/assets are stored.
+     * Always returns a local path in Documents/Meta Finance App/assets
+     * to avoid searching in cloud paths like Google Drive.
+     */
+    async getAssetsDir(): Promise<string> {
+        const baseDir = await getLocalBaseDir();
+        return await join(baseDir, 'assets');
+    },
+
+    /**
+     * Reads a file and returns its content as a Base64 string.
+     * Uses a chunked approach to handle large files without stack overflow.
+     */
+    async readFileAsBase64(path: string): Promise<string> {
+        if (!isDesktop()) return '';
+        try {
+            const bytes = await readFile(path);
+            const CHUNK_SIZE = 8192;
+            let binary = '';
+
+            for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+                const chunk = bytes.slice(i, i + CHUNK_SIZE);
+                // @ts-ignore
+                binary += String.fromCharCode.apply(null, chunk);
+            }
+
+            return btoa(binary);
+        } catch (error) {
+            console.error('[Storage] Error reading file as base64:', error, path);
+            return '';
+        }
     },
 
     /**
