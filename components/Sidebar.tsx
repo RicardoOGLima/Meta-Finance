@@ -161,6 +161,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
 
         <div className="pt-2">
           <button
+            onClick={() => onPageChange('insights')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${currentPage === 'insights'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+              : 'text-slate-500 hover:bg-slate-100'
+              }`}
+          >
+            <Brain size={20} />
+            AI Insights
+          </button>
+        </div>
+
+        <div className="pt-2">
+          <button
             onClick={() => onPageChange('configuracoes')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${currentPage === 'configuracoes'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'

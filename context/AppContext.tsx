@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Transaction, Asset, BudgetGoal, InvestmentGoal, AppState, Dividend } from '../types';
 import { INITIAL_BUDGET_GOALS, INITIAL_INVESTMENT_GOALS, EXPENSE_SUBCATEGORIES } from '../constants';
 import { storage } from '../utils/storage';
+import { exportTransactionsToCSV, exportAssetsToCSV, exportDividendsToCSV } from '../utils/export';
 import toast from 'react-hot-toast';
 
 interface AppContextType extends AppState {
@@ -92,8 +93,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('[AppContext] Change detected, saving...');
         storage.save(state);
         lastSavedJson.current = currentJson;
-      } else {
-        // console.log('[AppContext] No change detected, skipping save.');
       }
     }
   }, [state]);
@@ -255,7 +254,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       budgetGoals: state.budgetGoals || INITIAL_BUDGET_GOALS,
       investmentGoals: state.investmentGoals || INITIAL_INVESTMENT_GOALS,
       subcategories: state.subcategories || EXPENSE_SUBCATEGORIES,
-      theme: 'light',
       addTransaction,
       deleteTransaction,
       updateTransaction,

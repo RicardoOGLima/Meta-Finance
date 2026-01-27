@@ -88,9 +88,111 @@ export const storage = {
             console.log('[Storage] Saved to localStorage');
         }
 
-        // Trigger Async Backup Management (Fire and forget to not block UI)
+        /**
+         * Trigger Async Backup Management (Fire and forget to not block UI)
+         */
         if (isDesktop()) {
             this.manageBackups(data).catch(err => console.error('[Storage] Backup error:', err));
+        }
+    },
+
+    /**
+     * Saves a Toph AI insight report
+     */
+    async saveInsight(name: string, content: string): Promise<void> {
+        if (!isDesktop()) return;
+
+        try {
+            const path = await getDesktopFilePath();
+            const parentDir = await dirname(path);
+            const insightsDir = await join(parentDir, 'insights');
+
+            if (!(await exists(insightsDir))) {
+                await mkdir(insightsDir, { recursive: true });
+            }
+
+            const filePath = await join(insightsDir, name);
+            await writeTextFile(filePath, content);
+            console.log(`[Storage] Toph AI Insight saved: ${name}`);
+        } catch (error) {
+            console.error('[Storage] Error saving Toph AI insight:', error);
+        }
+    },
+
+    /**
+     * Gets the date of the most recent insight to help determine if a new one is needed
+     */
+    async getLastInsightDate(): Promise<Date | null> {
+        if (!isDesktop()) return null;
+        try {
+            const insights = await this.listInsights();
+            if (insights.length === 0) return null;
+
+            //Insights are named like "Analise_Semanal_YYYY-MM-DD.md" or "Relatorio_Mensal_YYYY-MM.md"
+            // We can check the file stats for the most recent one
+            const path = await getDesktopFilePath();
+            const parentDir = await dirname(path);
+            const insightsDir = await join(parentDir, 'insights');
+
+            let latestDate: Date | null = null;
+
+            for (const insight of insights) {
+                const filePath = await join(insightsDir, insight.name);
+                const metadata = await stat(filePath);
+                const mtime = metadata.mtime ? new Date(metadata.mtime) : null;
+                if (mtime && (!latestDate || mtime > latestDate)) {
+                    latestDate = mtime;
+                }
+            }
+            return latestDate;
+        } catch (error) {
+            console.error('[Storage] Error getting last insight date:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Lists all .md files in the insights folder
+     */
+    async listInsights(): Promise<{ name: string, path: string }[]> {
+        if (!isDesktop()) return [];
+        try {
+            const path = await getDesktopFilePath();
+            const parentDir = await dirname(path);
+            const insightsDir = await join(parentDir, 'insights');
+
+            if (!(await exists(insightsDir))) return [];
+
+            const entries = await readDir(insightsDir);
+            return entries
+                .filter(e => e.isFile && e.name.endsWith('.md'))
+                .map(e => ({
+                    name: e.name,
+                    path: `${insightsDir}/${e.name}` // Note: simplified for display
+                }));
+        } catch (error) {
+            console.error('[Storage] Error listing insights:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Reads the content of an insight file
+     */
+    async readInsight(name: string): Promise<string> {
+        if (!isDesktop()) return '';
+        try {
+            const path = await getDesktopFilePath();
+            const parentDir = await dirname(path);
+            const insightsDir = await join(parentDir, 'insights');
+            const filePath = await join(insightsDir, name);
+
+            if (!(await exists(filePath))) return '';
+
+            return await readTextFile(filePath);
+        } catch (error) {
+            console.error('[Storage] Error reading insight:', error);
+            return '';
         }
     },
 

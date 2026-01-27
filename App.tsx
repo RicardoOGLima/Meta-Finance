@@ -15,14 +15,88 @@ import Configuracoes from './pages/Configuracoes';
 import Forecast from './pages/Forecast';
 import Login from './pages/Login';
 import Proventos from './pages/Proventos';
+import Insights from './pages/Insights';
 import { Loader2 } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import toast, { Toaster } from 'react-hot-toast';
+import { TophAI } from './utils/analyst';
+import { storage } from './utils/storage';
+
+const useTophAIAutomation = () => {
+  const {
+    transactions, assets, dividends, budgetGoals,
+    investmentGoals, subcategories, isDataLoading
+  } = useApp();
+
+  React.useEffect(() => {
+    if (isDataLoading) return;
+
+    const checkAndGenerateReport = async () => {
+      try {
+        const lastInsightDate = await storage.getLastInsightDate();
+        const now = new Date();
+        const today = now.getDay(); // 0 is Sunday, 1 is Monday
+
+        let shouldGenerate = false;
+        let type: 'weekly' | 'monthly' = 'weekly';
+
+        // 1. Check for Monthly Report (until 5th day of the month)
+        if (now.getDate() <= 5) {
+          const monthKey = now.toISOString().slice(0, 7);
+          const insights = await storage.listInsights();
+          const hasMonthly = insights.some(i => i.name.includes(`Relatorio_Mensal_${monthKey}`));
+          if (!hasMonthly) {
+            shouldGenerate = true;
+            type = 'monthly';
+          }
+        }
+
+        // 2. Check for Weekly Report (on Mondays, if more than 6 days since last)
+        if (!shouldGenerate && today === 1) {
+          if (!lastInsightDate || (now.getTime() - lastInsightDate.getTime()) > 6 * 24 * 60 * 60 * 1000) {
+            shouldGenerate = true;
+            type = 'weekly';
+          }
+        }
+
+        if (shouldGenerate) {
+          const stateValues = {
+            transactions, assets, dividends, budgetGoals, investmentGoals, subcategories
+          };
+
+          const report = TophAI.generateReport(stateValues, type);
+          await storage.saveInsight(report.name, report.content);
+
+          toast.success(`Toph AI: Novo relatório ${type === 'weekly' ? 'semanal' : 'mensal'} gerado!`, {
+            duration: 8000,
+            icon: '🤖',
+            position: 'top-center',
+            style: {
+              background: '#0f172a',
+              color: '#fff',
+              border: '1px solid #1e293b',
+              padding: '16px',
+              borderRadius: '16px',
+              fontWeight: 'bold'
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Toph AI Automation Error:', err);
+      }
+    };
+
+    checkAndGenerateReport();
+  }, [isDataLoading, transactions, assets, dividends, budgetGoals, investmentGoals, subcategories]);
+};
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { isDataLoading } = useApp();
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  // Activate Toph AI
+  useTophAIAutomation();
 
   if (authLoading || isDataLoading) {
     return (
@@ -52,6 +126,7 @@ const AppContent: React.FC = () => {
       case 'configuracoes': return <Configuracoes />;
       case 'forecast': return <Forecast />;
       case 'proventos': return <Proventos onPageChange={setCurrentPage} />;
+      case 'insights': return <Insights />;
       default: return <Dashboard />;
     }
   };
