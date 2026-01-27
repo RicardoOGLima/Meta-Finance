@@ -4,8 +4,8 @@
     "pub_date": "2026-01-27T02:30:00Z",
     "platforms": {
         "windows-x86_64": {
-            "signature": "",
-            "url": ""
+            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRMFFaNjMyM3hrV1Z1RlY5ak5JeHFFK0kwcS9IQ2d1bEdRV2p4Q25jNTV0cWVZcmFuTk5SUmQ1NVh5WTZhNUd1dUFmV3RPNFJHK1pIbUtpQTluNGQvU24vTkl3Y1lKZkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY5NDkyMTE4CWZpbGU6bWV0YS1maW5hbmNlXzIuMC4wX3g2NF9lbi1VUy5tc2kKaHBoazdia3BNakxyb3JJZmRtVy81OC9yUUhNSHhvSjdSQmZ0RjA4R21HUFdXcm42Z0QxNDZuTWtnMENxNi9ZeDVUUFMyMU93TDUwM0xUa252OW9DQ2c9PQo",
+            "url": "https://github.com/RicardoOGLima/Meta-Finance/releases/download/v2.0.0/meta-finance_2.0.0_x64_en-US.msi"
         }
     }
 }
