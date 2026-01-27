@@ -61,19 +61,25 @@ Construído com o que há de mais moderno no desenvolvimento de software:
 
 ---
 
-## 🖥️ Começando
+## � Como Começar
 
-### Instalação Web
-1. Clone o repositório.
+Para a maioria dos usuários, a forma mais rápida de usar o **Meta Finance** é instalando a versão Desktop, que oferece a melhor performance e integração.
+
+### 📥 Download e Instalação
+1. Acesse a página de [**Releases**](https://github.com/RicardoOGLima/Meta-Finance/releases).
+2. Baixe o instalador mais recente (`.msi`).
+3. Execute o instalador no seu Windows e siga os passos na tela.
+4. Pronto! O app estará pronto para uso.
+
+> [!TIP]
+> A versão Desktop sincroniza automaticamente seus dados com o Google Drive, mantendo tudo seguro e acessível.
+
+### 💻 Desenvolvimento (Opcional)
+Se você é um desenvolvedor e deseja rodar o projeto localmente ou contribuir:
+1. Clone o repositório: `git clone https://github.com/RicardoOGLima/Meta-Finance.git`
 2. Instale as dependências: `npm install`
-3. Configure o `.env.local` (veja `README.md` original para detalhes das chaves).
-4. Rode: `npm run dev`
-
-### Versão Desktop
-Para uma experiência completa com integração ao sistema de arquivos e maior performance, utilize a versão Windows. O build é gerenciado via:
-```powershell
-npm run tauri build
-```
+3. Configure as variáveis de ambiente no `.env.local`.
+4. Inicie o ambiente: `npm run tauri dev` (Desktop) ou `npm run dev` (Web).
 
 ---
 
